@@ -1,0 +1,49 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/NineLanCacheUI"
+    schedule:
+      interval: "weekly"
+      timezone: "America/Toronto"
+    commit-message:
+      prefix: "deps(npm)"
+    groups:
+      ui-dependencies:
+        patterns:
+          - "*"
+    reviewers:
+      - "ninepiece2"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      timezone: "America/Toronto"
+    commit-message:
+      prefix: "deps(github-actions)"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    reviewers:
+      - "ninepiece2"
+  
+  - package-ecosystem: "nuget"
+    directory: "/NineLanCacheUI-API"
+    schedule:
+      interval: "weekly"
+      timezone: "America/Toronto"
+    commit-message:
+      prefix: "deps(nuget)"
+    versioning-strategy: increase-if-necessary
+    allow:
+      - dependency-type: "direct"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    groups:
+      api-dependencies:
+        patterns:
+          - "*"
+    reviewers:
+      - "ninepiece2"

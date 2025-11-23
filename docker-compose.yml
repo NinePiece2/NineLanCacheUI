@@ -24,4 +24,5 @@ services:
     network_mode: "host"
     environment:
       - API_BASE_URL=http://localhost:7401
+      - API_PORT=7401
       - AllowedHosts=*
