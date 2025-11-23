@@ -16,8 +16,8 @@ RUN npm run build
 
 FROM node:22-alpine AS deploy
 
-# Install NGINX
-RUN apk add --no-cache nginx
+# Install NGINX and gettext (for envsubst)
+RUN apk add --no-cache nginx gettext
 
 WORKDIR /app
 COPY --from=build /app/package.json ./
@@ -28,8 +28,8 @@ RUN npm ci --only=production
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/public ./public
 
-# Copy custom NGINX config
-COPY ./nginx.conf /etc/nginx/nginx.conf
+# Copy custom NGINX config as template
+COPY ./nginx.conf /etc/nginx/nginx.conf.template
 COPY --from=build /app/run.sh ./
 
 # Create NGINX run dirs
