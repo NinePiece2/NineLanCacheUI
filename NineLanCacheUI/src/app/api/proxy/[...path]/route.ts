@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const API_BASE_URL = process.env.API_BASE_URL;
+
+async function ProxyRequest(
+    url: string,
+    options: RequestInit = {}
+): Promise<Response> {
+    const headers = new Headers(options.headers || {});
+    if (!headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
+    }
+  
+    return fetch(url, { ...options, headers });
+}
+
 type RouteContext = {
   params: Promise<{ path: string[] }>;
-  searchParams: URLSearchParams;
 };
 
 export async function GET(req: NextRequest, context: RouteContext) {
@@ -29,16 +42,7 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
   return proxyRequest(req, resolvedParams, "DELETE");
 }
 
-async function proxyRequest(
-  req: NextRequest,
-  params: { path: string[] },
-  method: string
-) {
-  const API_BASE_URL = process.env.API_BASE_URL;
-  if (!API_BASE_URL) {
-    throw new Error("API_BASE_URL not configured");
-  }
-
+async function proxyRequest(req: NextRequest, params: { path: string[] }, method: string) {
   const pathSegments = params.path;
 
   if (!pathSegments || pathSegments.length === 0) {
@@ -53,16 +57,13 @@ async function proxyRequest(
 
     const filteredHeaders = filterHeaders(req.headers);
 
-    const fetchOptions: RequestInit = {
+    const options: RequestInit = {
       method,
       headers: filteredHeaders,
+      body: method !== "GET" ? await req.text() : undefined,
     };
 
-    if (method !== "GET") {
-      fetchOptions.body = await req.text();
-    }
-
-    const response = await fetch(url.toString(), fetchOptions);
+    const response = await ProxyRequest(url.toString(), options);
     const contentType = response.headers.get("content-type");
 
     if (contentType?.includes("application/json")) {
