@@ -35,12 +35,16 @@ updates:
       timezone: "America/Toronto"
     commit-message:
       prefix: "deps(nuget)"
-    versioning-strategy: increase-if-necessary
-    allow:
-      - dependency-type: "direct"
-        update-types:
-          - "version-update:semver-minor"
-          - "version-update:semver-patch"
+    ignore:
+      - dependency-name: "*"
+        versions: [">=10.0.0"]
+    groups:
+      api-dependencies:
+        patterns:
+          - "*"
+    reviewers:
+      - "ninepiece2"
+
     groups:
       api-dependencies:
         patterns:
