@@ -16,7 +16,7 @@
 
 | CI Status |
 |-----------|
-| [![UI Build](https://img.shields.io/github/actions/workflow/status/NinePiece2/NineLanCacheUI/build-ui.yml?label=UI%20Build&logo=github&style=flat-square)](https://github.com/NinePiece2/NineLanCacheUI/actions/workflows/build-ui.yml) [![API Build](https://img.shields.io/github/actions/workflow/status/NinePiece2/NineLanCacheUI/build-api.yml?label=API%20Build&logo=github&style=flat-square)](https://github.com/NinePiece2/NineLanCacheUI/actions/workflows/build-api.yml) |
+| [![UI Build](https://img.shields.io/github/actions/workflow/status/NinePiece2/NineLanCacheUI/build-ui.yml?label=UI%20Build&logo=github&style=flat-square)](https://github.com/NinePiece2/NineLanCacheUI/actions/workflows/build-ui.yml) [![API Build](https://img.shields.io/github/actions/workflow/status/NinePiece2/NineLanCacheUI/build-api.yml?label=API%20Build&logo=github&style=flat-square)](https://github.com/NinePiece2/NineLanCacheUI/actions/workflows/build-api.yml) [![UI Pulls](https://img.shields.io/docker/pulls/ninepiece2/nine-lancache-ui.svg?label=UI%20Pulls&logo=docker&style=flat-square)](https://hub.docker.com/r/ninepiece2/nine-lancache-ui/tags?name=UI) [![API Pulls](https://img.shields.io/docker/pulls/ninepiece2/nine-lancache-ui.svg?label=API%20Pulls&logo=docker&style=flat-square)](https://hub.docker.com/r/ninepiece2/nine-lancache-ui/tags?name=API) |
 
 Based on [DeveLanCacheUI_Backend](https://github.com/devedse/DeveLanCacheUI_Backend) / [DeveLanCacheUI_Frontend](https://github.com/devedse/DeveLanCacheUI_Frontend)
 Directly forking the DeveLanCacheUI_Backend project and creating a new UI for [LanCache.NET](https://lancache.net/). This is done using Syncfusion grids and pie charts for an improved look and better data filtering and visualization. There are also filters that are perisitant throughout certain pages and through closing and reopening the page that allow for time filtration and showing or hiding excluded IPs.
@@ -58,6 +58,8 @@ Shows the settings page where the active interface can be selected for the graph
 2. Update the docker-compose.yml volumes to match your LanCache Logs folder and the new persistant data folder
 3. Change the Timezone and Lang information to help with debugging inside the container.
 4. Change the dns to your LanCache.
+5. Run ```docker compose up -d```
+6. Visit http://LanCacheIP:8080 where LanCacheIP is the machine that is running NineLanCacheUI (In my case 192.168.15.200).
    
 ### Docker Compose File:
 
@@ -89,6 +91,7 @@ services:
     network_mode: "host"
     environment:
       - API_BASE_URL=http://localhost:7401
+      - API_PORT=7401
       - AllowedHosts=*
 ```
 
@@ -119,6 +122,7 @@ services:
 | -- | -- | -- |
 | AllowedHosts | Sets the HOSTS header for CORS. Leave at * unless you know what you're doing | * |
 | API_BASE_URL | The backend url where the frontend connects to. | http://localhost:7401 |
+| API_PORT | The backend port where the frontend connects to in nginx. | 7401 |
 
 ## Issue: My access.log file is updated but my DeveLanCacheUI_Backend isn't reading the new lines
 

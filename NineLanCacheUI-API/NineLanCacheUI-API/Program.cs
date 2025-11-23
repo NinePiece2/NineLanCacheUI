@@ -20,6 +20,11 @@ namespace NineLanCacheUI_API
             var builder = WebApplication.CreateBuilder(args);
 
             var lanCacheUIDataDirectory = builder.Configuration["LanCacheUIDataDirectory"];
+            // Convert to absolute path if it's a relative path
+            if (!string.IsNullOrWhiteSpace(lanCacheUIDataDirectory) && !Path.IsPathRooted(lanCacheUIDataDirectory))
+            {
+                lanCacheUIDataDirectory = Path.GetFullPath(lanCacheUIDataDirectory);
+            }
             if (lanCacheUIDataDirectory != null)
             {
                 Directory.CreateDirectory(lanCacheUIDataDirectory);

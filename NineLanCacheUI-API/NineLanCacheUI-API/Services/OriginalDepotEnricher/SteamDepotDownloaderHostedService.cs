@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using NineLanCacheUI_API.Data.Tables;
+using NineLanCacheUI_API.Helpers;
 namespace NineLanCacheUI_API.Services.OriginalDepotEnricher
 {
     public class SteamDepotDownloaderHostedService : BackgroundService
@@ -67,16 +68,12 @@ namespace NineLanCacheUI_API.Services.OriginalDepotEnricher
                     {
                         throw new UnreachableException($"New version available, but LatestVersion or DownloadUrl is null. This should not happen. LatestVersion: {shouldDownload.LatestVersion}, DownloadUrl: {shouldDownload.DownloadUrl}");
                     }
-                    var downloadedBytes = await GoDownload(depotFileDirectory, shouldDownload);
 
-                    if (downloadedBytes != null)
-                    {
-                        await _steamDepotEnricherHostedService.GoProcess(shouldDownload.LatestVersion, downloadedBytes, stoppingToken);
-                    }
-                    else
-                    {
-                        _logger.LogWarning("Downloaded depot file was null, not processing further.");
-                    }
+                    _logger.LogInformation("Detected that new version '{LatestVersion}' of Depot File is available, downloading: {DownloadUrl}...", shouldDownload.LatestVersion, shouldDownload.DownloadUrl);
+
+                    var downloadedBytes = await RemoteFileDownloader.DownloadFileAsync(shouldDownload.DownloadUrl, stoppingToken);
+
+                    await _steamDepotEnricherHostedService.GoProcess(shouldDownload.LatestVersion, downloadedBytes, stoppingToken);
                 }
 
                 await Task.Delay(TimeSpan.FromHours(1));
@@ -125,13 +122,17 @@ namespace NineLanCacheUI_API.Services.OriginalDepotEnricher
                 return (false, null, null);
             }
 
-            var downloadUrl = dataParsed.assets.FirstOrDefault(t => t.browser_download_url.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))?.browser_download_url;
-            if (downloadUrl == null)
+            var asset = dataParsed.assets?.FirstOrDefault(a => a.name == "app-depot-output-cleaned.csv.gz")
+                        ?? dataParsed.assets?.FirstOrDefault(a => a.name == "app-depot-output-cleaned.csv");
+
+            if (asset == null || string.IsNullOrWhiteSpace(asset.browser_download_url))
             {
-                _logger.LogWarning("Could not find download url in: {Data}", data);
+                _logger.LogWarning("Could not find app-depot-output-cleaned.csv.gz or .csv in release assets");
                 return (false, null, null);
             }
 
+            var downloadUrl = asset.browser_download_url;
+            
             await using (var scope = Services.CreateAsyncScope())
             {
                 using var dbContext = scope.ServiceProvider.GetRequiredService<NineLanCacheUIDBContext>();
