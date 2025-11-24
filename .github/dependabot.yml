@@ -44,10 +44,3 @@ updates:
           - "*"
     reviewers:
       - "ninepiece2"
-
-    groups:
-      api-dependencies:
-        patterns:
-          - "*"
-    reviewers:
-      - "ninepiece2"
