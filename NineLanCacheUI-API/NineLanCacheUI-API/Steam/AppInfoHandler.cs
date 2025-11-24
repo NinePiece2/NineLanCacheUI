@@ -3,6 +3,7 @@ using NineLanCacheUI_API.Services;
 using NineLanCacheUI_API.Steam.Exceptions;
 using NineLanCacheUI_API.Services.OriginalDepotEnricher.Models;
 using SteamKit2;
+using NineLanCacheUI_API.Services.OriginalDepotEnricher;
 namespace NineLanCacheUI_API.Steam
 {
     /// <summary>
