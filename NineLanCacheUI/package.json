@@ -12,10 +12,10 @@
     "@microsoft/signalr": "^10.0.0",
     "@syncfusion/ej2-base": "^31.2.12",
     "@syncfusion/ej2-icons": "^31.2.12",
-    "@syncfusion/ej2-react-charts": "^31.2.12",
-    "@syncfusion/ej2-react-grids": "^31.2.12",
+    "@syncfusion/ej2-react-charts": "^31.2.15",
+    "@syncfusion/ej2-react-grids": "^31.2.15",
     "concurrently": "^9.2.1",
-    "next": "16.0.4",
+    "next": "16.0.6",
     "react": "19.2.0",
     "react-dom": "19.2.0"
   },
@@ -26,7 +26,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.0.4",
+    "eslint-config-next": "16.0.6",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
