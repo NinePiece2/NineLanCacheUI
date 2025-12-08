@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import NextImage from "next/image";
 import {
   GridComponent,
   ColumnsDirective,
   ColumnDirective,
-  Page,
   Inject,
   Filter,
   Sort,
@@ -14,8 +14,9 @@ import {
 } from "@syncfusion/ej2-react-grids";
 
 import { formatBytes } from "../../../lib/Utilities";
-import { getSignalRConnection, startConnection, stopConnection } from "../../../lib/SignalR";
+import { getSignalRConnection, startConnection } from "../../../lib/SignalR";
 import { useRef } from "react";
+import { imageCache } from "../../../lib/ImageCache";
 
 interface SteamDepot {
   id: number;
@@ -62,28 +63,35 @@ function setStoredFilters(filters: Filters) {
   localStorage.setItem(FILTER_KEY, JSON.stringify(filters));
 }
 
-const PreloadableImage = ({ appId, onReady }: { appId: number, onReady: () => void }) => {
-  const [imageError, setImageError] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-
+const PreloadableImage = ({ appId }: { appId: number }) => {
   const imageUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
   const fallbackUrl = "https://steamdb.info/static/img/applogo.svg";
+  
+  // Initialize with cache check
+  const [imageError, setImageError] = useState(() => {
+    return imageCache.getStatus(imageUrl) === 'missing';
+  });
 
+  // Check cache asynchronously for unknown status
   useEffect(() => {
-    const img = new Image();
-    img.onload = () => {
-      setLoaded(true);
-      onReady();
-    };
-    img.onerror = () => {
-      setImageError(true);
-      setLoaded(true);
-      onReady();
-    };
-    img.src = imageUrl;
-  }, [appId]);
+    const cachedStatus = imageCache.getStatus(imageUrl);
+    if (cachedStatus === 'unknown') {
+      imageCache.checkImageExists(imageUrl).then(status => {
+        if (status === 'missing') {
+          setImageError(true);
+        }
+      });
+    }
+  }, [imageUrl]);
 
-  if (!loaded) return null;
+  const handleError = () => {
+    setImageError(true);
+    imageCache.setStatus(imageUrl, 'missing');
+  };
+
+  const handleLoad = () => {
+    imageCache.setStatus(imageUrl, 'exists');
+  };
 
   return (
     <div className="flex items-center justify-center">
@@ -92,16 +100,22 @@ const PreloadableImage = ({ appId, onReady }: { appId: number, onReady: () => vo
           <object
             data={fallbackUrl}
             type="image/svg+xml"
-            width="200"
-            height="75"
+            width="184"
+            height="69"
           >
             Steam App
           </object>
         ) : (
-          <img
+          <NextImage
             src={imageUrl}
             alt={`App ${appId}`}
-            className="w-[200px] h-[75px] object-cover rounded shadow bg-gray-900"
+            width={184}
+            height={69}
+            className="object-cover rounded shadow bg-gray-900"
+            loading="lazy"
+            onError={handleError}
+            onLoad={handleLoad}
+            quality={75}
           />
         )}
       </a>
@@ -113,7 +127,6 @@ const PreloadableImage = ({ appId, onReady }: { appId: number, onReady: () => vo
 
 export default function RecentSteamDownloads() {
   const gridRef = useRef<GridComponent | null>(null);
-  const [loading, setLoading] = useState(false);
   const [selectedRange, setSelectedRange] = useState(() => getStoredFilters()?.selectedRange || "0");
   const [customDays, setCustomDays] = useState(() => getStoredFilters()?.customDays || "");
   const [excludeIPs, setExcludeIPs] = useState(() => getStoredFilters()?.excludeIPs ?? true);
@@ -126,7 +139,6 @@ export default function RecentSteamDownloads() {
     selectedRange === "custom" ? parseInt(customDays) || 0 : parseInt(selectedRange);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
     try {
       const params = new URLSearchParams();
       if (days > 0) params.append("days", days.toString());
@@ -138,37 +150,21 @@ export default function RecentSteamDownloads() {
 
       const newData: DownloadEvent[] = await res.json();
 
-      const imagesToLoad = newData.filter(d => d.cacheIdentifier === "steam" && d.steamDepot?.steamAppId);
-      await Promise.all(imagesToLoad.map(d => {
-        return new Promise<void>(resolve => {
-          const img = new Image();
-          img.onload = img.onerror = () => resolve();
-          img.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${d.steamDepot!.steamAppId}/header.jpg`;
-        });
-      }));
-
       if (gridRef.current) {
-        const currentData = [...(gridRef.current.dataSource as DownloadEvent[] || [])];
-        const updated = [...currentData];
-
-        newData.forEach(item => {
-          const index = updated.findIndex(d => d.id === item.id);
-          if (index >= 0) {
-            updated[index] = item;
-          } else {
-            updated.unshift(item);
-          }
-        });
-
-        gridRef.current.dataSource = updated
+        const dataMap = new Map<number, DownloadEvent>();
+        
+        const currentData = gridRef.current.dataSource as DownloadEvent[] || [];
+        currentData.forEach(item => dataMap.set(item.id, item));
+        
+        newData.forEach(item => dataMap.set(item.id, item));
+        
+        gridRef.current.dataSource = Array.from(dataMap.values())
           .sort((a, b) => new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime())
           .slice(0, 100);
       }
 
     } catch (error) {
       console.error(error);
-    } finally {
-      setLoading(false);
     }
   }, [days, excludeIPs]);
 
@@ -185,19 +181,14 @@ export default function RecentSteamDownloads() {
       const newData: DownloadEvent[] = await res.json();
 
       if (gridRef.current) {
-        const currentData = [...(gridRef.current.dataSource as DownloadEvent[] || [])];
-        const updated = [...currentData];
-
-        newData.forEach(item => {
-          const index = updated.findIndex(d => d.id === item.id);
-          if (index >= 0) {
-            updated[index] = item;
-          } else {
-            updated.unshift(item);
-          }
-        });
-
-        gridRef.current.dataSource = updated
+        const dataMap = new Map<number, DownloadEvent>();
+        
+        const currentData = gridRef.current.dataSource as DownloadEvent[] || [];
+        currentData.forEach(item => dataMap.set(item.id, item));
+        
+        newData.forEach(item => dataMap.set(item.id, item));
+        
+        gridRef.current.dataSource = Array.from(dataMap.values())
           .sort((a, b) => new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime())
           .slice(0, 100);
       }
@@ -310,7 +301,7 @@ export default function RecentSteamDownloads() {
                     `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
 
                 return (
-                    <div className="text-sm text-white text-center whitespace-normal break-words">
+                    <div className="text-sm text-white text-center whitespace-normal wrap-break-word">
                      <div>{formatDateTime(created)} → {formatDateTime(updated)}</div>
                     </div>
                 );
@@ -322,8 +313,8 @@ export default function RecentSteamDownloads() {
               template={(props: DownloadEvent) => {
                 const appId = props.steamDepot?.steamAppId;
                 return props.cacheIdentifier === "steam" && appId
-                  ? <PreloadableImage appId={appId} onReady={() => {}} />
-                  : <div className="w-[200px] h-[75px] flex items-center justify-center" style={{padding: 0, margin: 0}}><span className="text-sm text-gray-300">unknown</span></div>;
+                  ? <PreloadableImage appId={appId} />
+                  : <div className="w-[184px] h-[69px] flex items-center justify-center" style={{padding: 0, margin: 0}}><span className="text-sm text-gray-300">unknown</span></div>;
               }}
             />
             <ColumnDirective

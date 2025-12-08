@@ -32,7 +32,7 @@ jobs:
             context: ./NineLanCacheUI
             file: ./NineLanCacheUI/Dockerfile
             push: true
-            tags: ${{ secrets.DOCKER_USERNAME }}/nine-lancache-ui:ui
+            tags: ${{ secrets.DOCKER_USERNAME }}/nine-lancache-ui:ui-beta
             build-args: |
               SYNCFUSION_LICENSE=${{ secrets.SyncfusionLicense }}
         

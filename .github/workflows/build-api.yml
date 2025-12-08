@@ -32,4 +32,4 @@ jobs:
             context: ./NineLanCacheUI-API
             file: ./NineLanCacheUI-API/NineLanCacheUI-API/Dockerfile
             push: true
-            tags: ${{ secrets.DOCKER_USERNAME }}/nine-lancache-ui:api
+            tags: ${{ secrets.DOCKER_USERNAME }}/nine-lancache-ui:api-beta

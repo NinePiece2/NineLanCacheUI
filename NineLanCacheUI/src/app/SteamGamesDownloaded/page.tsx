@@ -1,8 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
+import NextImage from "next/image";
 import { PagerComponent } from "@syncfusion/ej2-react-grids";
 import Button from "../../components/Button";
-import { getSignalRConnection, startConnection, stopConnection } from "../../../lib/SignalR";
+import { getSignalRConnection, startConnection } from "../../../lib/SignalR";
+import { imageCache } from "../../../lib/ImageCache";
 
 type Game = {
   appid: number;
@@ -11,34 +13,34 @@ type Game = {
 
 const PAGE_SIZE = 6;
 
-const PreloadableImage = ({
-  appId,
-  imageStatus,
-  setImageStatus,
-}: {
-  appId: number;
-  imageStatus: Record<number, { loaded: boolean; error: boolean }>;
-  setImageStatus: React.Dispatch<React.SetStateAction<Record<number, { loaded: boolean; error: boolean }>>>;
-}) => {
+const PreloadableImage = ({ appId }: { appId: number }) => {
   const imageUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
+  
+  // Initialize with cache check
+  const [imageError, setImageError] = useState(() => {
+    return imageCache.getStatus(imageUrl) === 'missing';
+  });
 
+  // Check cache asynchronously for unknown status
   useEffect(() => {
-    if (imageStatus[appId]) {
-      return;
+    const cachedStatus = imageCache.getStatus(imageUrl);
+    if (cachedStatus === 'unknown') {
+      imageCache.checkImageExists(imageUrl).then(status => {
+        if (status === 'missing') {
+          setImageError(true);
+        }
+      });
     }
-    const img = new Image();
-    img.onload = () => {
-      setImageStatus((prev) => ({ ...prev, [appId]: { loaded: true, error: false } }));
-    };
-    img.onerror = () => {
-      setImageStatus((prev) => ({ ...prev, [appId]: { loaded: true, error: true } }));
-    };
-    img.src = imageUrl;
-  }, [appId, imageStatus, setImageStatus]);
+  }, [imageUrl]);
 
-  const status = imageStatus[appId];
+  const handleError = () => {
+    setImageError(true);
+    imageCache.setStatus(imageUrl, 'missing');
+  };
 
-  if (!status || !status.loaded) return null;
+  const handleLoad = () => {
+    imageCache.setStatus(imageUrl, 'exists');
+  };
 
   return (
     <div className="flex items-center justify-center">
@@ -49,7 +51,7 @@ const PreloadableImage = ({
         rel="noopener noreferrer"
         style={{maxHeight: "215px"}}
       >
-        {status.error ? (
+        {imageError ? (
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 184 69"
@@ -63,10 +65,16 @@ const PreloadableImage = ({
             />
           </svg>
         ) : (
-          <img
+          <NextImage
             src={imageUrl}
             alt={`App ${appId}`}
+            width={368}
+            height={172}
             className="object-cover rounded shadow bg-gray-900"
+            loading="lazy"
+            onError={handleError}
+            onLoad={handleLoad}
+            quality={75}
           />
         )}
       </a>
@@ -77,14 +85,17 @@ const PreloadableImage = ({
 export default function SteamGamesPage() {
   const [games, setGames] = useState<Game[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [imageStatus, setImageStatus] = useState<Record<number, { loaded: boolean; error: boolean }>>({});
   const [filterText, setFilterText] = useState("");
 
   useEffect(() => {
     fetch("/api/proxy/SteamGames/GetSteamGames")
       .then((res) => res.json())
-      .then((data) => {
-        setGames(data);
+      .then((data: Game[]) => {
+        // Deduplicate by appid to prevent memory bloat
+        const uniqueGames = Array.from(
+          new Map(data.map(game => [game.appid, game])).values()
+        );
+        setGames(uniqueGames);
       })
       .catch((err) => {
         console.error("Error fetching games:", err);
@@ -100,15 +111,19 @@ export default function SteamGamesPage() {
     );
   });
 
-  const pagedGames = filteredGames.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const totalPages = Math.ceil(filteredGames.length / PAGE_SIZE) || 1;
+  const effectiveCurrentPage = currentPage > totalPages ? 1 : currentPage;
+
+  const pagedGames = filteredGames.slice((effectiveCurrentPage - 1) * PAGE_SIZE, effectiveCurrentPage * PAGE_SIZE);
 
   const handlePageChange = (e: { currentPage: number }) => {
     setCurrentPage(e.currentPage);
   };
 
-  useEffect(() => {
+  const handleFilterChange = (value: string) => {
+    setFilterText(value);
     setCurrentPage(1);
-  }, [filterText]);
+  };
 
    useEffect(() => {
        const connection = getSignalRConnection();
@@ -116,8 +131,12 @@ export default function SteamGamesPage() {
        const handler = () => {
          fetch("/api/proxy/SteamGames/GetSteamGames")
           .then((res) => res.json())
-          .then((data) => {
-            setGames(data);
+          .then((data: Game[]) => {
+            // Deduplicate by appid to prevent memory bloat
+            const uniqueGames = Array.from(
+              new Map(data.map(game => [game.appid, game])).values()
+            );
+            setGames(uniqueGames);
           })
           .catch((err) => {
             console.error("Error fetching games:", err);
@@ -140,12 +159,12 @@ export default function SteamGamesPage() {
                 type="text"
                 placeholder="Search by Name or AppId..."
                 value={filterText}
-                onChange={(e) => setFilterText(e.target.value)}
-                className="p-2 flex-grow rounded border border-gray-600 text-white"
+                onChange={(e) => handleFilterChange(e.target.value)}
+                className="p-2 grow rounded border border-gray-600 text-white"
                 style={{ backgroundColor: "#121212", color: "#ffffff", marginBottom: "0" }}
             />
             <Button
-                onClick={() => setFilterText("")}
+                onClick={() => handleFilterChange("")}
                 disabled={!filterText.trim()}
                 className={`p-2 rounded text-white ${
                 filterText.trim()
@@ -163,7 +182,7 @@ export default function SteamGamesPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {pagedGames.map((game, idx) => (
             <div key={idx} className="rounded shadow-lg p-4" style={{ backgroundColor: "#1a1a1a" }}>
-            <PreloadableImage appId={game.appid} imageStatus={imageStatus} setImageStatus={setImageStatus} />
+            <PreloadableImage appId={game.appid} />
             <h2 className="text-lg font-bold text-center">{game.name}</h2>
             </div>
         ))}
@@ -174,7 +193,7 @@ export default function SteamGamesPage() {
 
         <div className="mt-8 flex justify-center " style={{ position:"revert"}}>
         <PagerComponent
-            currentPage={currentPage}
+            currentPage={effectiveCurrentPage}
             totalRecordsCount={filteredGames.length}
             pageSize={PAGE_SIZE}
             click={handlePageChange}

@@ -10,23 +10,16 @@ import {
 } from '@syncfusion/ej2-react-charts';
 import { formatBytes, chartPalette } from "../../../lib/Utilities";
 import React, { useEffect, useState, useCallback } from 'react';
-import { getSignalRConnection, startConnection, stopConnection } from "../../../lib/SignalR";
+import { getSignalRConnection, startConnection } from "../../../lib/SignalR";
 import {
   GridComponent,
   ColumnsDirective,
   ColumnDirective,
-  Page,
   Filter,
   Sort,
-  Toolbar,
-  VirtualScroll 
+  Toolbar
 } from "@syncfusion/ej2-react-grids";
 import { useRef } from "react";
-
-interface ServiceData {
-  service: string;
-  totalBytes: number;
-}
 
 interface ClientData {
   ipAddress: string;
@@ -63,12 +56,6 @@ function setStoredFilters(filters: Filters) {
 }
 
 export default function Stats() {
-  const [hitMissData, setHitMissData] = useState([
-    { x: 'Hit Bytes', y: 0 },
-    { x: 'Miss Bytes', y: 0 },
-  ]);
-
-  const [serviceSplitData, setServiceSplitData] = useState<{ x: string; y: number }[]>([]);
   const [missBytesByClient, setMissBytesByClient] = useState<{ x: string; y: number }[]>([]);
   const [hitBytesByClient, setHitBytesByClient] = useState<{ x: string; y: number }[]>([]);
   const [selectedRange, setSelectedRange] = useState(() => getStoredFilters()?.selectedRange || "0");
@@ -127,7 +114,7 @@ export default function Stats() {
 
   useEffect(() => {
     fetchAll();
-  }, [debouncedDays, excludeIPs]);
+  }, [debouncedDays, excludeIPs, fetchAll]);
 
   useEffect(() => {
     const connection = getSignalRConnection();
@@ -195,7 +182,7 @@ export default function Stats() {
                   <ColumnDirective field="totalMisses" headerText="Miss Bytes" width="150"
                     template={(props: HitMissData) => formatBytes(props.totalMisses)} />
                 </ColumnsDirective>
-                <Inject services={[Page, Sort, Filter, Toolbar]} />
+                <Inject services={[Sort, Filter, Toolbar]} />
               </GridComponent>
             </div>
 
