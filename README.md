@@ -1,22 +1,26 @@
 # NineLanCacheUI
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![UI Build](https://img.shields.io/github/actions/workflow/status/NinePiece2/NineLanCacheUI/build-ui.yml?label=UI%20Build&logo=github&style=flat-square)](https://github.com/NinePiece2/NineLanCacheUI/actions/workflows/build-ui.yml)
+[![API Build](https://img.shields.io/github/actions/workflow/status/NinePiece2/NineLanCacheUI/build-api.yml?label=API%20Build&logo=github&style=flat-square)](https://github.com/NinePiece2/NineLanCacheUI/actions/workflows/build-api.yml)
+[![UI Pulls](https://img.shields.io/docker/pulls/ninepiece2/nine-lancache-ui.svg?label=UI%20Pulls&logo=docker&style=flat-square)](https://hub.docker.com/r/ninepiece2/nine-lancache-ui/tags?name=UI)
+[![API Pulls](https://img.shields.io/docker/pulls/ninepiece2/nine-lancache-ui.svg?label=API%20Pulls&logo=docker&style=flat-square)](https://hub.docker.com/r/ninepiece2/nine-lancache-ui/tags?name=API)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](CONTRIBUTING.md)
+
 ## Table Of Contents
-- [NineLanCacheUI](#ninelancacheui)
-  - [Table Of Contents](#table-of-contents)
-  - [Introduction](#introduction)
-  - [Screenshots](#screenshots)
-  - [Install/Run Instructions](#installrun-instructions)
-    - [Docker Compose File:](#docker-compose-file)
-    - [Configuration variable explanation](#configuration-variable-explanation)
-  - [Issue: My access.log file is updated but my DeveLanCacheUI\_Backend isn't reading the new lines](#issue-my-accesslog-file-is-updated-but-my-develancacheui_backend-isnt-reading-the-new-lines)
-  - [References:](#references)
+- [Introduction](#introduction)
+- [Screenshots](#screenshots)
+- [Install/Run Instructions](#installrun-instructions)
+  - [Docker Compose File](#docker-compose-file)
+  - [Configuration variable explanation](#configuration-variable-explanation)
+- [Contributing](#contributing)
+- [Troubleshooting](#troubleshooting)
+  - [Issue: My access.log file is updated but the backend isn't reading the new lines](#issue-my-accesslog-file-is-updated-but-the-backend-isnt-reading-the-new-lines)
+- [License](#license)
+- [References](#references)
 
 
 ## Introduction
-
-| CI Status |
-|-----------|
-| [![UI Build](https://img.shields.io/github/actions/workflow/status/NinePiece2/NineLanCacheUI/build-ui.yml?label=UI%20Build&logo=github&style=flat-square)](https://github.com/NinePiece2/NineLanCacheUI/actions/workflows/build-ui.yml) [![API Build](https://img.shields.io/github/actions/workflow/status/NinePiece2/NineLanCacheUI/build-api.yml?label=API%20Build&logo=github&style=flat-square)](https://github.com/NinePiece2/NineLanCacheUI/actions/workflows/build-api.yml) [![UI Pulls](https://img.shields.io/docker/pulls/ninepiece2/nine-lancache-ui.svg?label=UI%20Pulls&logo=docker&style=flat-square)](https://hub.docker.com/r/ninepiece2/nine-lancache-ui/tags?name=UI) [![API Pulls](https://img.shields.io/docker/pulls/ninepiece2/nine-lancache-ui.svg?label=API%20Pulls&logo=docker&style=flat-square)](https://hub.docker.com/r/ninepiece2/nine-lancache-ui/tags?name=API) |
 
 Based on [DeveLanCacheUI_Backend](https://github.com/devedse/DeveLanCacheUI_Backend) / [DeveLanCacheUI_Frontend](https://github.com/devedse/DeveLanCacheUI_Frontend)
 Directly forking the DeveLanCacheUI_Backend project and creating a new UI for [LanCache.NET](https://lancache.net/). This is done using Syncfusion grids and pie charts for an improved look and better data filtering and visualization. There are also filters that are perisitant throughout certain pages and through closing and reopening the page that allow for time filtration and showing or hiding excluded IPs.
@@ -124,16 +128,33 @@ services:
 | API_BASE_URL | The backend url where the frontend connects to. | http://localhost:7401 |
 | API_PORT | The backend port where the frontend connects to in nginx. | 7401 |
 
-## Issue: My access.log file is updated but my DeveLanCacheUI_Backend isn't reading the new lines
+## Contributing
 
-So apparently if the access.log file is in a SMB Share which is mounted in docker the DeveLanCacheUI_Backend application takes a READ lock on the share. This apparently lets CIFS decide that no other applications will write to this file which allows it to cache things.
-If you manually execute the `ls` command in the lancachelogs directory it will in fact start reading the file again.
+We welcome contributions from the community! Please check out our [Contributing Guidelines](CONTRIBUTING.md) to get started.
 
-To work around this issue you need to add `cache=none` to the CIFS mount in `/etc/fstab`:
+- 🐛 [Report a Bug](https://github.com/NinePiece2/NineLanCacheUI/issues/new?template=bug_report.md)
+- ✨ [Request a Feature](https://github.com/NinePiece2/NineLanCacheUI/issues/new?template=feature_request.md)
+- 💬 [Ask a Question](https://github.com/NinePiece2/NineLanCacheUI/issues/new?template=question.md)
+- 📖 [Read the Code of Conduct](CODE_OF_CONDUCT.md)
+
+## Troubleshooting
+
+### Issue: My access.log file is updated but the backend isn't reading the new lines
+
+If the access.log file is in a SMB Share which is mounted in docker, the application may take a READ lock on the share. This lets CIFS decide that no other applications will write to this file, allowing it to cache things.
+
+**Solution:** You need to add `cache=none` to the CIFS mount in `/etc/fstab`:
 ```
 //192.168.2.201/DockerComposers /mnt/mynas/DockerComposers cifs credentials=/home/pi/.mynascredentialssmb,iocharset=utf8,vers=3.0,sec=ntlmssp,cache=none 0 0
 ```
 
+If you manually execute the `ls` command in the lancachelogs directory it will also start reading the file again temporarily.
+
+For more issues and solutions, check our [Issues page](https://github.com/NinePiece2/NineLanCacheUI/issues).
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## References:
 - https://github.com/devedse/DeveLanCacheUI_Backend?tab=readme-ov-file
