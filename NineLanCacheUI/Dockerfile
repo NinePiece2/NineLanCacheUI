@@ -1,7 +1,9 @@
 FROM node:22-alpine AS build
 
 ARG SYNCFUSION_LICENSE
+ARG VERSION=dev
 ENV SYNCFUSION_LICENSE=${SYNCFUSION_LICENSE}
+ENV NEXT_PUBLIC_VERSION=${VERSION}
 
 WORKDIR /app
 
@@ -15,6 +17,20 @@ RUN export SYNCFUSION_LICENSE=""
 RUN npm run build
 
 FROM node:22-alpine AS deploy
+
+ARG VERSION=dev
+ARG BUILD_DATE
+ARG VCS_REF
+
+LABEL org.opencontainers.image.title="NineLanCacheUI" \
+      org.opencontainers.image.description="Modern UI for LanCache" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.source="https://github.com/NinePiece2/NineLanCacheUI" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.licenses="MIT"
+
+ENV VERSION=${VERSION}
 
 # Install NGINX and gettext (for envsubst)
 RUN apk add --no-cache nginx gettext
