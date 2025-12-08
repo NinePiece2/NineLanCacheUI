@@ -154,6 +154,17 @@ namespace NineLanCacheUI_API
             app.MapControllers();
             app.MapHub<UIRefreshHub>("/uirefreshhub");
 
+            // Add version endpoint
+            app.MapGet("/api/version", () =>
+            {
+                var version = Environment.GetEnvironmentVariable("VERSION") ?? "dev";
+                return Results.Ok(new
+                {
+                    version,
+                    timestamp = DateTime.UtcNow
+                });
+            }).WithName("GetVersion").WithOpenApi();
+
             app.Run();
         }
     }

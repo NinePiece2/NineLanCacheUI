@@ -25,6 +25,21 @@ RUN dotnet publish "./NineLanCacheUI-API.csproj" -c $BUILD_CONFIGURATION -o /app
 
 # This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
 FROM base AS final
+
+ARG VERSION=dev
+ARG BUILD_DATE
+ARG VCS_REF
+
+LABEL org.opencontainers.image.title="NineLanCacheUI-API" \
+      org.opencontainers.image.description="Backend API for NineLanCacheUI" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.source="https://github.com/NinePiece2/NineLanCacheUI" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.licenses="MIT"
+
+ENV VERSION=${VERSION}
+
 WORKDIR /app
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "NineLanCacheUI-API.dll"]
