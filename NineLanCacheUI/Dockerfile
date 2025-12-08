@@ -48,8 +48,9 @@ COPY --from=build /app/public ./public
 COPY ./nginx.conf /etc/nginx/nginx.conf.template
 COPY --from=build /app/run.sh ./
 
-# Create NGINX run dirs
-RUN mkdir -p /run/nginx
+# Create NGINX run dirs and cache directory for image optimization
+RUN mkdir -p /run/nginx /tmp/nginx_cache && \
+    chmod 777 /tmp/nginx_cache
 
 EXPOSE 3000
 EXPOSE 80
