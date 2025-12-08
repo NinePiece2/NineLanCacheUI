@@ -67,43 +67,37 @@ const PreloadableImage = ({ appId }: { appId: number }) => {
   const imageUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
   const fallbackUrl = "https://steamdb.info/static/img/applogo.svg";
   
-  // Initialize with cache check
-  const [imageError, setImageError] = useState(() => {
-    return imageCache.getStatus(imageUrl) === 'missing';
-  });
-
-  // Check cache asynchronously for unknown status
-  useEffect(() => {
-    const cachedStatus = imageCache.getStatus(imageUrl);
-    if (cachedStatus === 'unknown') {
-      imageCache.checkImageExists(imageUrl).then(status => {
-        if (status === 'missing') {
-          setImageError(true);
-        }
-      });
-    }
-  }, [imageUrl]);
+  const [currentSrc, setCurrentSrc] = useState(imageUrl);
+  const hasErrored = useRef(false);
 
   const handleError = () => {
-    setImageError(true);
-    imageCache.setStatus(imageUrl, 'missing');
+    console.log('Image error for appId:', appId, 'hasErrored:', hasErrored.current);
+    if (!hasErrored.current) {
+      hasErrored.current = true;
+      setCurrentSrc(fallbackUrl);
+      console.log('Switched to fallback for appId:', appId);
+      imageCache.setStatus(imageUrl, 'missing');
+    }
   };
 
   const handleLoad = () => {
-    imageCache.setStatus(imageUrl, 'exists');
+    if (currentSrc === imageUrl) {
+      imageCache.setStatus(imageUrl, 'exists');
+    }
   };
 
   return (
     <div className="flex items-center justify-center">
       <a href={`https://steamdb.info/app/${appId}/`} target="_blank" rel="noopener noreferrer">
-        {imageError ? (
+        {currentSrc === fallbackUrl ? (
           <object
             data={fallbackUrl}
             type="image/svg+xml"
-            width="184"
-            height="69"
+            width={184}
+            height={69}
+            className="object-cover rounded shadow bg-gray-900"
           >
-            Steam App
+            <div className="flex items-center justify-center" style={{width: '184px', height: '69px'}}>Steam App</div>
           </object>
         ) : (
           <NextImage
@@ -313,7 +307,7 @@ export default function RecentSteamDownloads() {
               template={(props: DownloadEvent) => {
                 const appId = props.steamDepot?.steamAppId;
                 return props.cacheIdentifier === "steam" && appId
-                  ? <PreloadableImage appId={appId} />
+                  ? <PreloadableImage key={appId} appId={appId} />
                   : <div className="w-[184px] h-[69px] flex items-center justify-center" style={{padding: 0, margin: 0}}><span className="text-sm text-gray-300">unknown</span></div>;
               }}
             />

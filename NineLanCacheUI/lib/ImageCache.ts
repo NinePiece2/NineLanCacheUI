@@ -26,14 +26,22 @@ class ImageCache {
         const now = Date.now();
         
         // Load cached entries that haven't expired
+        // Only load 'exists' status from cache - re-check 'missing' images
         Object.entries(parsed).forEach(([url, data]) => {
           if (data.timestamp && (now - data.timestamp < this.CACHE_DURATION)) {
-            this.cache.set(url, data.status);
+            // Only trust positive cache entries, re-check missing ones
+            if (data.status === 'exists') {
+              this.cache.set(url, data.status);
+            }
           }
         });
       }
     } catch {
       console.warn('Failed to load image cache from storage');
+      // Clear corrupted cache
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(this.STORAGE_KEY);
+      }
     }
   }
 
