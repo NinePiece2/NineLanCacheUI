@@ -21,8 +21,6 @@ const nextConfig: NextConfig = {
     dangerouslyAllowSVG: true, // Allow SVG fallback images
     contentDispositionType: 'inline',
   },
-  // Ensure proper handling in production
-  output: 'standalone',
 };
 
 export default nextConfig;
