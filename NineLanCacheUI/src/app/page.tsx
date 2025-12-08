@@ -6,8 +6,7 @@ import {
   Inject,
   PieSeries,
   AccumulationTooltip,
-  AccumulationLegend,
-  StyleSettings
+  AccumulationLegend
 } from '@syncfusion/ej2-react-charts';
 
 import {
@@ -21,8 +20,7 @@ import {
 
 import { formatBytes, chartPalette, formatBits } from "../../lib/Utilities";
 import React, { useEffect, useState, useCallback } from 'react';
-import { getSignalRConnection, stopConnection, startConnection } from "../../lib/SignalR";
-import { text } from 'stream/consumers';
+import { getSignalRConnection, startConnection } from "../../lib/SignalR";
 
 interface ServiceData {
   service: string;
@@ -108,9 +106,7 @@ export default function Home() {
   const [customDays, setCustomDays] = useState(() => getStoredFilters()?.customDays || "");
   const [excludeIPs, setExcludeIPs] = useState(() => getStoredFilters()?.excludeIPs ?? true);
 
-  const [rawUploadSeries, setRawUploadSeries] = useState<{ x: Date; y: number }[]>([]);
   const [uploadSeries, setUploadSeries] = useState<{ x: Date; y: number }[]>([]);
-  const SMOOTH_WINDOW = 10;
 
 
   useEffect(() => {
@@ -170,7 +166,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchAll();
-  }, [debouncedDays, excludeIPs]);
+  }, [debouncedDays, excludeIPs, fetchAll]);
 
    useEffect(() => {
       const connection = getSignalRConnection();
@@ -223,7 +219,6 @@ export default function Home() {
           y: d.bytesSentPerSec,
         }));
 
-        setRawUploadSeries(rawPoints);
         setUploadSeries(preprocessGraph(rawPoints));
       } catch (err) {
         console.error('Initial graph fetch failed:', err);
@@ -253,11 +248,10 @@ export default function Home() {
             y: data.bytesSentPerSec,
           };
 
-          setRawUploadSeries(prevRaw => {
+          setUploadSeries(prevSeries => {
             const thirtyMinAgo = new Date(newRawPoint.x.getTime() - 30 * 60 * 1000);
-            const filteredRaw = [...prevRaw.filter(p => p.x > thirtyMinAgo), newRawPoint];
-            setUploadSeries(preprocessGraph(filteredRaw)); // smooth only once here
-            return filteredRaw;
+            const filteredRaw = [...prevSeries.filter(p => p.x > thirtyMinAgo), newRawPoint];
+            return preprocessGraph(filteredRaw);
           });
         }
       } catch (err) {
