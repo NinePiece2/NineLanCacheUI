@@ -1,26 +1,20 @@
 'use client';
-import {
-  AccumulationChartComponent,
-  AccumulationSeriesCollectionDirective,
-  AccumulationSeriesDirective,
-  Inject,
-  PieSeries,
-  AccumulationTooltip,
-  AccumulationLegend
-} from '@syncfusion/ej2-react-charts';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { formatBytes, chartPalette } from "../../../lib/Utilities";
 import React, { useEffect, useState, useCallback } from 'react';
 import { getSignalRConnection, startConnection } from "../../../lib/SignalR";
-import {
-  GridComponent,
-  ColumnsDirective,
-  ColumnDirective,
-  Filter,
-  Sort,
-  Toolbar
-} from "@syncfusion/ej2-react-grids";
-import { useRef } from "react";
+import { AnimatedPage, AnimatedCard } from "@/components/animations";
+import { DateRangeFilter } from "@/components/DateRangeFilter";
 
+// Local types for Recharts tooltip/label payloads to avoid `any`
+type PieTooltipItem = {
+  payload?: { x?: string; y?: number } | undefined;
+  name?: string | undefined;
+  value?: number | undefined;
+};
 interface ClientData {
   ipAddress: string;
   totalBytes: number;
@@ -61,8 +55,10 @@ export default function Stats() {
   const [selectedRange, setSelectedRange] = useState(() => getStoredFilters()?.selectedRange || "0");
   const [customDays, setCustomDays] = useState(() => getStoredFilters()?.customDays || "");
   const [excludeIPs, setExcludeIPs] = useState(() => getStoredFilters()?.excludeIPs ?? true);
-  const gridRef = useRef<GridComponent | null>(null);
-  const [hitMissGridData, setHitMissGridData] = useState([]);
+  const [hitMissGridData, setHitMissGridData] = useState<HitMissData[]>([]);
+  const [filterText, setFilterText] = useState("");
+  const [sortField, setSortField] = useState<keyof HitMissData | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   useEffect(() => {
     setStoredFilters({ selectedRange, customDays, excludeIPs });
@@ -131,166 +127,193 @@ export default function Stats() {
     };
   }, [fetchAll]);
 
-  const commonProps = {
-    legendSettings: {
-      visible: true,
-      textStyle: {
-        size: '14px',
-        color: '#ededed',
-        fontFamily: 'Poppins, sans-serif',
-        fontWeight: '600',
-      },
-    },
-    tooltip: {
-      enable: true,
-      textStyle: {
-        fontFamily: 'Poppins, sans-serif',
-        size: '14px',
-        fontWeight: '500',
-        color: '#ffffff'
-      },
-      fill: '#0a0a0a',
-    },
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: PieTooltipItem[] }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      const value = data.payload?.y ?? data.value ?? 0;
+      return (
+        <div className="bg-card p-2 rounded border border-border">
+          <p className="text-foreground font-['Poppins'] text-sm">
+            {`${data.payload?.x || data.name || 'Unknown'}: ${formatBytes(value)}`}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const renderLabel = (entry: { name?: string; x?: string; value?: number; y?: number }) => {
+    return `${entry.name || entry.x}: ${formatBytes(entry.value ?? entry.y ?? 0)}`;
+  };
+
+  const filteredData = hitMissGridData.filter(item => 
+    !filterText || item.ipAddress.toLowerCase().includes(filterText.toLowerCase())
+  );
+
+  const sortedData = [...filteredData].sort((a, b) => {
+    if (!sortField) return 0;
+    const aVal = a[sortField];
+    const bVal = b[sortField];
+    const modifier = sortDirection === 'asc' ? 1 : -1;
+    return aVal > bVal ? modifier : aVal < bVal ? -modifier : 0;
+  });
+
+  const handleSort = (field: keyof HitMissData) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
   };
 
   return (
-    <div>
-      <div className="p-6 mx-auto rounded-3xl" style={{ backgroundColor: "#1a1a1a", color: "#eee", width: "90%" }}>
-        <div className="flex flex-col p-6">
-          <div className="flex gap-6">
-            {/* Left side: Syncfusion Grid */}
-            <div className="w-2/4 overflow-x-auto">
-              <GridComponent 
-                ref={gridRef}
-                dataSource={hitMissGridData}
-                allowPaging={true}
-                pageSettings={{ pageSize: 15 }}
-                allowSorting={true}
-                allowFiltering={true}
-                filterSettings={{
-                  type: 'FilterBar',
-                  mode: 'Immediate',
-                  immediateModeDelay: 150
-                }}
-                height={ '55vh'}
+    <AnimatedPage>
+      <AnimatedCard delay={0.1}>
+        <div className="p-4 mx-auto rounded-3xl bg-background" style={{ width: "95%" }}>
+          <div className="flex flex-col p-4">
+            <div className="flex gap-4">
+              {/* Left side: Table */}
+              <div className="w-2/4">
+                <Card className="bg-card border-border">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-foreground">Client Hit/Miss Stats</CardTitle>
+                      <Input
+                        placeholder="Filter by IP..."
+                        value={filterText}
+                        onChange={(e) => setFilterText(e.target.value)}
+                        className="max-w-xs bg-secondary text-foreground border-border"
+                      />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[50vh] overflow-y-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-border hover:bg-transparent">
+                              <TableHead 
+                                className="text-foreground cursor-pointer hover:text-muted-foreground"
+                              onClick={() => handleSort('ipAddress')}
+                            >
+                              Client IPs {sortField === 'ipAddress' && (sortDirection === 'asc' ? '↑' : '↓')}
+                            </TableHead>
+                            <TableHead 
+                              className="text-foreground cursor-pointer hover:text-muted-foreground"
+                              onClick={() => handleSort('totalHits')}
+                            >
+                              Hit Bytes {sortField === 'totalHits' && (sortDirection === 'asc' ? '↑' : '↓')}
+                            </TableHead>
+                            <TableHead 
+                              className="text-foreground cursor-pointer hover:text-muted-foreground"
+                              onClick={() => handleSort('totalMisses')}
+                            >
+                              Miss Bytes {sortField === 'totalMisses' && (sortDirection === 'asc' ? '↑' : '↓')}
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {sortedData.map((row, idx) => (
+                            <TableRow key={idx} className="border-border hover:bg-secondary">
+                              <TableCell className="text-foreground">{row.ipAddress}</TableCell>
+                              <TableCell className="text-foreground">{formatBytes(row.totalHits)}</TableCell>
+                              <TableCell className="text-foreground">{formatBytes(row.totalMisses)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Right side: Two pie charts stacked vertically */}
+              <div className="w-2/4 flex flex-col gap-4">
+                <Card className="bg-card border-border">
+                  <CardHeader>
+                    <CardTitle className="text-center text-foreground font-semibold text-lg">Client Cache Hit</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-60">
+                    {hitBytesByClient.length > 0 && (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={hitBytesByClient}
+                            dataKey="y"
+                            nameKey="x"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={70}
+                            label={renderLabel}
+                          >
+                            {hitBytesByClient.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={chartPalette[index % chartPalette.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<CustomTooltip />} />
+                          <Legend 
+                            wrapperStyle={{ 
+                              fontFamily: 'Poppins, sans-serif',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              color: 'var(--foreground)'
+                            }} 
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    )}
+                  </CardContent>
+                </Card>
                 
-              >
-                <ColumnsDirective>
-                  <ColumnDirective field="ipAddress" headerText="Client IPs" width="150" />
-                  <ColumnDirective field="totalHits" headerText="Hit Bytes" width="150"
-                    template={(props: HitMissData) => formatBytes(props.totalHits)} />
-                  <ColumnDirective field="totalMisses" headerText="Miss Bytes" width="150"
-                    template={(props: HitMissData) => formatBytes(props.totalMisses)} />
-                </ColumnsDirective>
-                <Inject services={[Sort, Filter, Toolbar]} />
-              </GridComponent>
-            </div>
-
-            {/* Right side: Two pie charts stacked vertically */}
-            <div className="w-2/4 flex flex-col gap-6">
-              <div className="h-80 rounded p-2">
-                <h2 className="text-center text-white font-semibold text-lg mb-2">Client Cache Hit</h2>
-                {hitBytesByClient.length > 0 && (
-                <AccumulationChartComponent
-                  {...commonProps}
-                  tooltipRender={(args) => {
-                    if (args.point?.y) {
-                      args.text = `${args.point.x}: ${formatBytes(args.point.y)}`;
-                    }
-                  }}
-                >
-                  <Inject services={[PieSeries, AccumulationTooltip, AccumulationLegend]} />
-                  <AccumulationSeriesCollectionDirective>
-                    <AccumulationSeriesDirective
-                      dataSource={hitBytesByClient}
-                      xName="x"
-                      yName="y"
-                      type="Pie"
-                      dataLabel={{ visible: true, name: 'x' }}
-                      palettes={chartPalette}
-                    />
-                  </AccumulationSeriesCollectionDirective>
-                </AccumulationChartComponent>
-                )}
-              </div>
-              <div className="h-80 rounded p-2">
-                <h2 className="text-center text-white font-semibold text-lg mb-2">Client Cache Miss</h2>
-                {missBytesByClient.length > 0 && (
-                <AccumulationChartComponent
-                  {...commonProps}
-                  tooltipRender={(args) => {
-                    if (args.point?.y) {
-                      args.text = `${args.point.x}: ${formatBytes(args.point.y)}`;
-                    }
-                  }}
-                >
-                  <Inject services={[PieSeries, AccumulationTooltip, AccumulationLegend]} />
-                  <AccumulationSeriesCollectionDirective>
-                    <AccumulationSeriesDirective
-                      dataSource={missBytesByClient}
-                      xName="x"
-                      yName="y"
-                      type="Pie"
-                      dataLabel={{ visible: true, name: 'x' }}
-                      palettes={chartPalette}
-                    />
-                  </AccumulationSeriesCollectionDirective>
-                </AccumulationChartComponent>
-                )}
+                <Card className="bg-card border-border">
+                  <CardHeader>
+                    <CardTitle className="text-center text-foreground font-semibold text-lg">Client Cache Miss</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-60">
+                    {missBytesByClient.length > 0 && (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={missBytesByClient}
+                            dataKey="y"
+                            nameKey="x"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={70}
+                            label={renderLabel}
+                          >
+                            {missBytesByClient.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={chartPalette[index % chartPalette.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<CustomTooltip />} />
+                          <Legend 
+                            wrapperStyle={{ 
+                              fontFamily: 'Poppins, sans-serif',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              color: 'var(--foreground)'
+                            }} 
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      <div className="container flex flex-wrap items-center gap-4 px-8 py-4 rounded-md shadow-md" style={{ width: '100%', marginTop: '1rem', padding: '15px', marginBottom: '2rem'}}>
-          <label htmlFor="range" className="text-white font-semibold whitespace-nowrap">
-            Date Range:
-          </label>
-
-          <div className="flex items-center gap-2">
-            <select
-              id="range"
-              className="text-white px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-              style={{color: '#ffffff', backgroundColor: '#1a1a1a'}}
-              value={selectedRange}
-              onChange={(e) => setSelectedRange(e.target.value)}
-            >
-              <option value="0">All time</option>
-              <option value="30">Last 30 days</option>
-              <option value="7">Last 7 days</option>
-              <option value="1">Last 1 day</option>
-              <option value="custom">Custom</option>
-            </select>
-
-            {selectedRange === 'custom' && (
-              <input
-                type="number"
-                min={1}
-                max={365}
-                placeholder="Days"
-                className="text-white px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-                style={{ margin: '0', width: '5rem', color: '#ffffff', backgroundColor: '#1a1a1a' }}
-                value={customDays}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (/^\d{0,3}$/.test(val)) {
-                    setCustomDays(val);
-                  }
-                }}
-              />
-            )}
-          </div>
-
-          <button
-            className={`ml-auto px-5 py-2 rounded-md font-semibold transition-colors duration-300 ${
-              excludeIPs ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'
-            } text-white shadow-md whitespace-nowrap`}
-            onClick={() => setExcludeIPs(!excludeIPs)}
-            type="button"
-          >
-            {excludeIPs ? 'Exclude IPs' : 'Include All IPs'}
-          </button>
-        </div>
-    </div>
+      </AnimatedCard>
+      <DateRangeFilter
+        selectedRange={selectedRange}
+        customDays={customDays}
+        excludeIPs={excludeIPs}
+        onRangeChange={setSelectedRange}
+        onCustomDaysChange={setCustomDays}
+        onExcludeIPsChange={setExcludeIPs}
+        delay={0.2}
+      />
+    </AnimatedPage>
   );
 }

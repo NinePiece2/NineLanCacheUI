@@ -1,10 +1,11 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import NextImage from "next/image";
-import { PagerComponent } from "@syncfusion/ej2-react-grids";
-import Button from "../../components/Button";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { getSignalRConnection, startConnection } from "../../../lib/SignalR";
 import { imageCache } from "../../../lib/ImageCache";
+import { AnimatedPage, AnimatedCard } from "@/components/animations";
 
 type Game = {
   appid: number;
@@ -51,7 +52,7 @@ const PreloadableImage = ({ appId }: { appId: number }) => {
             type="image/svg+xml"
             width={368}
             height={172}
-            className="object-cover rounded shadow bg-gray-900"
+            className="object-cover rounded shadow bg-muted"
           >
             <div className="flex items-center justify-center" style={{width: '368px', height: '172px'}}>Steam App</div>
           </object>
@@ -61,7 +62,7 @@ const PreloadableImage = ({ appId }: { appId: number }) => {
             alt={`App ${appId}`}
             width={368}
             height={172}
-            className="object-cover rounded shadow bg-gray-900"
+            className="object-cover rounded shadow bg-muted"
             loading="lazy"
             onError={handleError}
             onLoad={handleLoad}
@@ -107,10 +108,6 @@ export default function SteamGamesPage() {
 
   const pagedGames = filteredGames.slice((effectiveCurrentPage - 1) * PAGE_SIZE, effectiveCurrentPage * PAGE_SIZE);
 
-  const handlePageChange = (e: { currentPage: number }) => {
-    setCurrentPage(e.currentPage);
-  };
-
   const handleFilterChange = (value: string) => {
     setFilterText(value);
     setCurrentPage(1);
@@ -144,52 +141,84 @@ export default function SteamGamesPage() {
      }, []);
 
   return (
-    <div className="p-8 mx-auto" style={{ width: "95%"}}>
-        <div className="mb-4 flex items-center gap-2" style={{ maxWidth: "25%", minWidth: "200px" }}>
-            <input
-                type="text"
-                placeholder="Search by Name or AppId..."
-                value={filterText}
-                onChange={(e) => handleFilterChange(e.target.value)}
-                className="p-2 grow rounded border border-gray-600 text-white"
-                style={{ backgroundColor: "#121212", color: "#ffffff", marginBottom: "0" }}
+    <AnimatedPage>
+      <div className="p-4 mx-auto bg-background" style={{ width: "98%", maxWidth: "1600px" }}>
+        <AnimatedCard delay={0.1}>
+          <div className="mb-4 flex items-center gap-2" style={{ maxWidth: "25%", minWidth: "200px" }}>
+            <Input
+              type="text"
+              placeholder="Search by Name or AppId..."
+              value={filterText}
+              onChange={(e) => handleFilterChange(e.target.value)}
+              className="grow bg-secondary text-foreground border-border"
             />
             <Button
-                onClick={() => handleFilterChange("")}
-                disabled={!filterText.trim()}
-                className={`p-2 rounded text-white ${
-                filterText.trim()
-                    ? "bg-gray-700 hover:bg-gray-600 cursor-pointer"
-                    : "bg-gray-900 cursor-not-allowed opacity-50"
-                }`}
-                aria-label="Clear filter"
-                type="button"
+              onClick={() => handleFilterChange("")}
+              disabled={!filterText.trim()}
+              variant="outline"
+              className="bg-secondary text-foreground border-border hover:bg-card"
+              aria-label="Clear filter"
+              type="button"
             >
-                Clear
+              Clear
             </Button>
-        </div>
+          </div>
+        </AnimatedCard>
 
+        <AnimatedCard delay={0.2}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {pagedGames.map((game, idx) => (
+              <div key={idx} className="rounded shadow-lg p-4 bg-card border border-border hover:border-foreground/50 transition" style={{}}>
+                <PreloadableImage key={game.appid} appId={game.appid} />
+                <h2 className="text-lg font-bold text-center text-foreground mt-2">{game.name}</h2>
+              </div>
+            ))}
+            {filteredGames.length === 0 && (
+              <p className="text-center col-span-full text-muted-foreground">No games found</p>
+            )}
+          </div>
+        </AnimatedCard>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {pagedGames.map((game, idx) => (
-            <div key={idx} className="rounded shadow-lg p-4" style={{ backgroundColor: "#1a1a1a" }}>
-            <PreloadableImage key={game.appid} appId={game.appid} />
-            <h2 className="text-lg font-bold text-center">{game.name}</h2>
-            </div>
-        ))}
-        {filteredGames.length === 0 && (
-            <p className="text-center col-span-full text-gray-400">No games found</p>
-        )}
-        </div>
-
-        <div className="mt-8 flex justify-center " style={{ position:"revert"}}>
-        <PagerComponent
-            currentPage={effectiveCurrentPage}
-            totalRecordsCount={filteredGames.length}
-            pageSize={PAGE_SIZE}
-            click={handlePageChange}
-        />
-        </div>
-    </div>
-    );
+        <AnimatedCard delay={0.3}>
+          <div className="mt-6 flex justify-center items-center gap-2">
+            <Button
+              onClick={() => setCurrentPage(1)}
+              disabled={effectiveCurrentPage === 1}
+              variant="outline"
+              className="bg-secondary text-foreground border-border hover:bg-card"
+            >
+              First
+            </Button>
+            <Button
+              onClick={() => setCurrentPage(effectiveCurrentPage - 1)}
+              disabled={effectiveCurrentPage === 1}
+              variant="outline"
+              className="bg-secondary text-foreground border-border hover:bg-card"
+            >
+              Previous
+            </Button>
+            <span className="text-foreground px-4">
+              Page {effectiveCurrentPage} of {totalPages}
+            </span>
+            <Button
+              onClick={() => setCurrentPage(effectiveCurrentPage + 1)}
+              disabled={effectiveCurrentPage === totalPages}
+              variant="outline"
+              className="bg-secondary text-foreground border-border hover:bg-card"
+            >
+              Next
+            </Button>
+            <Button
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={effectiveCurrentPage === totalPages}
+              variant="outline"
+              className="bg-secondary text-foreground border-border hover:bg-card"
+            >
+              Last
+            </Button>
+          </div>
+        </AnimatedCard>
+      </div>
+    </AnimatedPage>
+  );
 }

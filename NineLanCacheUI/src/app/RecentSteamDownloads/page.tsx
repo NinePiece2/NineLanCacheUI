@@ -1,22 +1,15 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import NextImage from "next/image";
-import {
-  GridComponent,
-  ColumnsDirective,
-  ColumnDirective,
-  Inject,
-  Filter,
-  Sort,
-  Toolbar,
-  VirtualScroll 
-} from "@syncfusion/ej2-react-grids";
-
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 import { formatBytes } from "../../../lib/Utilities";
 import { getSignalRConnection, startConnection } from "../../../lib/SignalR";
-import { useRef } from "react";
 import { imageCache } from "../../../lib/ImageCache";
+import { AnimatedPage, AnimatedCard } from "@/components/animations";
+import { DateRangeFilter } from "@/components/DateRangeFilter";
 
 interface SteamDepot {
   id: number;
@@ -95,7 +88,7 @@ const PreloadableImage = ({ appId }: { appId: number }) => {
             type="image/svg+xml"
             width={184}
             height={69}
-            className="object-cover rounded shadow bg-gray-900"
+            className="object-cover rounded shadow bg-muted"
           >
             <div className="flex items-center justify-center" style={{width: '184px', height: '69px'}}>Steam App</div>
           </object>
@@ -105,7 +98,7 @@ const PreloadableImage = ({ appId }: { appId: number }) => {
             alt={`App ${appId}`}
             width={184}
             height={69}
-            className="object-cover rounded shadow bg-gray-900"
+            className="object-cover rounded shadow bg-muted"
             loading="lazy"
             onError={handleError}
             onLoad={handleLoad}
@@ -120,10 +113,13 @@ const PreloadableImage = ({ appId }: { appId: number }) => {
 
 
 export default function RecentSteamDownloads() {
-  const gridRef = useRef<GridComponent | null>(null);
+  const [data, setData] = useState<DownloadEvent[]>([]);
   const [selectedRange, setSelectedRange] = useState(() => getStoredFilters()?.selectedRange || "0");
   const [customDays, setCustomDays] = useState(() => getStoredFilters()?.customDays || "");
   const [excludeIPs, setExcludeIPs] = useState(() => getStoredFilters()?.excludeIPs ?? true);
+  const [filterText, setFilterText] = useState("");
+  const [sortField, setSortField] = useState<keyof DownloadEvent | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
       setStoredFilters({ selectedRange, customDays, excludeIPs });
@@ -131,6 +127,37 @@ export default function RecentSteamDownloads() {
 
   const days =
     selectedRange === "custom" ? parseInt(customDays) || 0 : parseInt(selectedRange);
+
+  const filteredData = data.filter(item => {
+    if (!filterText) return true;
+    const searchLower = filterText.toLowerCase();
+    return (
+      item.clientIp.toLowerCase().includes(searchLower) ||
+      (item.steamDepot?.steamApp?.name || '').toLowerCase().includes(searchLower) ||
+      (item.downloadIdentifier?.toString() || '').includes(searchLower)
+    );
+  });
+
+  const sortedData = [...filteredData].sort((a, b) => {
+    if (sortField) {
+      const aVal = a[sortField];
+      const bVal = b[sortField];
+      const modifier = sortDirection === 'asc' ? 1 : -1;
+      if (aVal && bVal) {
+        return aVal > bVal ? modifier : aVal < bVal ? -modifier : 0;
+      }
+    }
+    return new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime();
+  });
+
+  const handleSort = (field: keyof DownloadEvent) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -143,19 +170,16 @@ export default function RecentSteamDownloads() {
       if (!res.ok) throw new Error("Failed to fetch data");
 
       const newData: DownloadEvent[] = await res.json();
-
-      if (gridRef.current) {
+      
+      setData(prevData => {
         const dataMap = new Map<number, DownloadEvent>();
-        
-        const currentData = gridRef.current.dataSource as DownloadEvent[] || [];
-        currentData.forEach(item => dataMap.set(item.id, item));
-        
+        prevData.forEach(item => dataMap.set(item.id, item));
         newData.forEach(item => dataMap.set(item.id, item));
         
-        gridRef.current.dataSource = Array.from(dataMap.values())
+        return Array.from(dataMap.values())
           .sort((a, b) => new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime())
           .slice(0, 100);
-      }
+      });
 
     } catch (error) {
       console.error(error);
@@ -174,18 +198,15 @@ export default function RecentSteamDownloads() {
 
       const newData: DownloadEvent[] = await res.json();
 
-      if (gridRef.current) {
+      setData(prevData => {
         const dataMap = new Map<number, DownloadEvent>();
-        
-        const currentData = gridRef.current.dataSource as DownloadEvent[] || [];
-        currentData.forEach(item => dataMap.set(item.id, item));
-        
+        prevData.forEach(item => dataMap.set(item.id, item));
         newData.forEach(item => dataMap.set(item.id, item));
         
-        gridRef.current.dataSource = Array.from(dataMap.values())
+        return Array.from(dataMap.values())
           .sort((a, b) => new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime())
           .slice(0, 100);
-      }
+      });
 
     } catch (error) {
       console.error("Failed to fetch and merge new data", error);
@@ -193,9 +214,7 @@ export default function RecentSteamDownloads() {
   }, [days, excludeIPs]);
 
   useEffect(() => {
-    if (gridRef.current) {
-      gridRef.current.dataSource = [];
-    }
+    setData([]);
     fetchData();
   }, [fetchData]);
 
@@ -216,195 +235,142 @@ export default function RecentSteamDownloads() {
 
 
   return (
-    <div className="p-6 mx-auto rounded-3xl" style={{ backgroundColor: "#1a1a1a", color: "#eee", width: "95%" }}>
-      <h1 className="text-4xl font-bold mb-6 text-center">Recent Downloads</h1>
+    <AnimatedPage>
+      <div className="p-4 mx-auto rounded-3xl bg-background" style={{ width: "98%", maxWidth: "1600px" }}>
+        <h1 className="text-3xl font-bold mb-4 text-center text-foreground">Recent Steam Downloads</h1>
 
-      {/* Filter Panel */}
-      <div
-        className="flex flex-wrap items-center gap-4 p-4 rounded-md shadow-md mb-6"
-        style={{ backgroundColor: "#2a2a2a" }}
-      >
-        <label htmlFor="range" className="text-white font-semibold whitespace-nowrap">
-          Date Range:
-        </label>
+        <DateRangeFilter
+          selectedRange={selectedRange}
+          customDays={customDays}
+          excludeIPs={excludeIPs}
+          onRangeChange={setSelectedRange}
+          onCustomDaysChange={setCustomDays}
+          onExcludeIPsChange={setExcludeIPs}
+          delay={0.1}
+        />
 
-        <select
-          id="range"
-          className="text-white px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-          style={{ color: "#ffffff", backgroundColor: "#1a1a1a" }}
-          value={selectedRange}
-          onChange={(e) => setSelectedRange(e.target.value)}
-        >
-          <option value="0">All time</option>
-          <option value="30">Last 30 days</option>
-          <option value="7">Last 7 days</option>
-          <option value="1">Last 1 day</option>
-          <option value="custom">Custom</option>
-        </select>
-
-        {selectedRange === "custom" && (
-          <input
-            type="number"
-            min={1}
-            max={365}
-            placeholder="Days"
-            className="text-white px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-            style={{ margin: "0", width: "5rem", color: "#ffffff", backgroundColor: "#1a1a1a" }}
-            value={customDays}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (/^\d{0,3}$/.test(val)) {
-                setCustomDays(val);
-              }
-            }}
-          />
-        )}
-
-        <button
-          className={`ml-auto px-5 py-2 rounded-md font-semibold transition-colors duration-300 ${
-            excludeIPs ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"
-          } text-white shadow-md whitespace-nowrap`}
-          onClick={() => setExcludeIPs(!excludeIPs)}
-          type="button"
-        >
-          {excludeIPs ? "Exclude IPs" : "Include All IPs"}
-        </button>
+        <AnimatedCard delay={0.2}>
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-foreground">Recent Steam Downloads</CardTitle>
+                <Input
+                  placeholder="Search..."
+                  value={filterText}
+                  onChange={(e) => setFilterText(e.target.value)}
+                  className="max-w-xs bg-secondary text-foreground border-border"
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[55vh] overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-border hover:bg-transparent">
+                      <TableHead className="text-foreground cursor-pointer hover:text-muted-foreground" onClick={() => handleSort('createdAt')}>
+                        Timestamp {sortField === 'createdAt' && (sortDirection === 'asc' ? '↑' : '↓')}
+                      </TableHead>
+                      <TableHead className="text-foreground">App</TableHead>
+                      <TableHead className="text-foreground">Depot</TableHead>
+                      <TableHead className="text-foreground cursor-pointer hover:text-muted-foreground" onClick={() => handleSort('clientIp')}>
+                        Client IP {sortField === 'clientIp' && (sortDirection === 'asc' ? '↑' : '↓')}
+                      </TableHead>
+                      <TableHead className="text-foreground">Hit %</TableHead>
+                      <TableHead className="text-foreground">Miss %</TableHead>
+                      <TableHead className="text-foreground">Download Progress</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedData.map((row) => {
+                      const formatDateTime = (date: Date) =>
+                        `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
+                      const created = new Date(row.createdAt);
+                      const updated = new Date(row.lastUpdatedAt);
+                      const total = row.cacheHitBytes + row.cacheMissBytes;
+                      const hitPercent = total > 0 ? (row.cacheHitBytes / total) * 100 : 0;
+                      const missPercent = total > 0 ? (row.cacheMissBytes / total) * 100 : 0;
+                      const appId = row.steamDepot?.steamAppId;
+                      const totalBytes = row.totalBytes ?? 0;
+                      const downloaded = (row.cacheMissBytes ?? 0) + (row.cacheHitBytes ?? 0);
+                      const downloadPercent = totalBytes > 0 ? Math.min((downloaded / totalBytes) * 100, 100) : 0;
+                      
+                      return (
+                        <TableRow key={row.id} className="border-border hover:bg-secondary">
+                          <TableCell className="text-foreground text-sm whitespace-nowrap">
+                            <div>{formatDateTime(created)} → {formatDateTime(updated)}</div>
+                          </TableCell>
+                          <TableCell>
+                            {row.cacheIdentifier === "steam" && appId ? (
+                              <PreloadableImage key={appId} appId={appId} />
+                            ) : (
+                              <div className="w-[184px] h-[69px] flex items-center justify-center">
+                                <span className="text-sm text-muted-foreground">unknown</span>
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {row.cacheIdentifier === "steam" && row.steamDepot?.id ? (
+                              <a
+                                href={`https://steamdb.info/depot/${row.steamDepot.id}/`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-indigo-400 hover:underline text-sm"
+                              >
+                                {row.steamDepot.id}
+                              </a>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">N/A</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-foreground">{row.clientIp}</TableCell>
+                          <TableCell>
+                            <div className="w-full min-w-[120px]">
+                              <div className="h-4 bg-muted rounded overflow-hidden">
+                                <div className="h-full bg-green-500" style={{ width: `${hitPercent}%` }}></div>
+                              </div>
+                              <div className="text-xs mt-1 text-foreground text-center">
+                                {formatBytes(row.cacheHitBytes)} • {hitPercent.toFixed(1)}%
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="w-full min-w-[120px]">
+                              <div className="h-4 bg-muted rounded overflow-hidden">
+                                <div className="h-full bg-red-500" style={{ width: `${missPercent}%` }}></div>
+                              </div>
+                              <div className="text-xs mt-1 text-foreground text-center">
+                                {formatBytes(row.cacheMissBytes)} • {missPercent.toFixed(1)}%
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="w-full min-w-[150px]">
+                              {totalBytes === 0 ? (
+                                <span className="text-red-400 text-sm">Could not find Steam Manifest</span>
+                              ) : (
+                                <>
+                                  <div className="h-4 bg-muted rounded overflow-hidden">
+                                    <div className="h-full bg-indigo-500" style={{ width: `${downloadPercent}%` }}></div>
+                                  </div>
+                                  <div className="text-xs mt-1 text-foreground text-center">
+                                    {downloadPercent < 100
+                                      ? `${formatBytes(downloaded)} / ${formatBytes(totalBytes)} (${downloadPercent.toFixed(1)}%)`
+                                      : `${formatBytes(downloaded)} (100%)`}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </AnimatedCard>
       </div>
-
-      <div>
-        {/* Grid */}
-        <GridComponent
-            ref={gridRef}
-            allowPaging={false}
-            allowSorting={true}
-            allowFiltering={true}
-            filterSettings={{ type: "Menu" }}
-            height={"60vh"}
-            rowSelected={() => {}}
-            style={{ minHeight: "500px" }}
-        >
-            <ColumnsDirective>
-            <ColumnDirective field="id" headerText="ID" width={80} visible={false} />
-            <ColumnDirective
-                headerText="Timestamp"
-                width={180}
-                template={(props: DownloadEvent) => {
-                const created = new Date(props.createdAt);
-                const updated = new Date(props.lastUpdatedAt);
-                const formatDateTime = (date: Date) =>
-                    `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
-
-                return (
-                    <div className="text-sm text-white text-center whitespace-normal wrap-break-word">
-                     <div>{formatDateTime(created)} → {formatDateTime(updated)}</div>
-                    </div>
-                );
-                }}
-            />
-            <ColumnDirective
-              headerText="App"
-              width={140}
-              template={(props: DownloadEvent) => {
-                const appId = props.steamDepot?.steamAppId;
-                return props.cacheIdentifier === "steam" && appId
-                  ? <PreloadableImage key={appId} appId={appId} />
-                  : <div className="w-[184px] h-[69px] flex items-center justify-center" style={{padding: 0, margin: 0}}><span className="text-sm text-gray-300">unknown</span></div>;
-              }}
-            />
-            <ColumnDirective
-                headerText="Depot"
-                width={120}
-                template={(props: DownloadEvent) => {
-                if (props.cacheIdentifier === "steam") {
-                    const depotLink = `https://steamdb.info/depot/${props.steamDepot?.id}/`;
-                    return (
-                    <a
-                        href={depotLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-400 hover:underline text-sm"
-                    >
-                        {props.steamDepot?.id}
-                    </a>
-                    );
-                }
-                return <span className="text-sm text-gray-300">N/A</span>;
-                }}
-            />
-            <ColumnDirective field="clientIp" headerText="Client IP" width={130} textAlign="Left" />
-            <ColumnDirective
-                headerText="Hit %"
-                width={150}
-                template={(props: DownloadEvent) => {
-                const total = props.cacheHitBytes + props.cacheMissBytes;
-                const hitPercent = total > 0 ? (props.cacheHitBytes / total) * 100 : 0;
-
-                return (
-                    <div className="w-full">
-                    <div className="h-4 bg-gray-700 rounded overflow-hidden">
-                        <div className="h-full bg-green-500" style={{ width: `${hitPercent}%` }}></div>
-                    </div>
-                    <div className="text-xs mt-1 text-white text-center">
-                        {formatBytes(props.cacheHitBytes)} • {hitPercent.toFixed(1)}%
-                    </div>
-                    </div>
-                );
-                }}
-            />
-            <ColumnDirective
-                headerText="Miss %"
-                width={150}
-                template={(props: DownloadEvent) => {
-                const total = props.cacheHitBytes + props.cacheMissBytes;
-                const missPercent = total > 0 ? (props.cacheMissBytes / total) * 100 : 0;
-
-                return (
-                    <div className="w-full">
-                    <div className="h-4 bg-gray-700 rounded overflow-hidden">
-                        <div className="h-full bg-red-500" style={{ width: `${missPercent}%` }}></div>
-                    </div>
-                    <div className="text-xs mt-1 text-white text-center">
-                        {formatBytes(props.cacheMissBytes)} • {missPercent.toFixed(1)}%
-                    </div>
-                    </div>
-                );
-                }}
-            />
-            <ColumnDirective
-              headerText="Download Progress"
-              width={200}
-              template={(props: DownloadEvent) => {
-                const totalBytes = props.totalBytes ?? 0;
-                const downloaded = (props.cacheMissBytes ?? 0) + (props.cacheHitBytes ?? 0);
-
-                if (totalBytes === 0) {
-                  return <span className="text-red-400 text-sm">Could not find Steam Manifest</span>;
-                }
-
-                const percent = Math.min((downloaded / totalBytes) * 100, 100);
-                const formattedDownloaded = formatBytes(downloaded);
-                const formattedTotal = formatBytes(totalBytes);
-
-                const progressString =
-                  percent < 100
-                    ? `${formattedDownloaded} / ${formattedTotal} (${percent.toFixed(1)}%)`
-                    : `${formattedDownloaded} (100%)`;
-
-                return (
-                  <div className="w-full">
-                    <div className="h-4 bg-gray-700 rounded overflow-hidden">
-                      <div className="h-full bg-blue-500" style={{ width: `${percent}%` }}></div>
-                    </div>
-                    <div className="text-xs mt-1 text-white text-center">{progressString}</div>
-                  </div>
-                );
-              }}
-            />
-
-            </ColumnsDirective>
-            <Inject services={[Toolbar, VirtualScroll, Filter, Sort ]} />
-        </GridComponent>
-      </div>
-    </div>
+    </AnimatedPage>
   );
 }

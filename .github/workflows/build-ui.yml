@@ -20,11 +20,22 @@ jobs:
           with:
             username: ${{ secrets.DOCKER_USERNAME }}
             password: ${{ secrets.DOCKERHUB_TOKEN }}
+        
+        - name: Login to Github Container Registry
+          uses: docker/login-action@v3
+          with:
+            registry: ghcr.io
+            username: ${{github.actor}}
+            password: ${{secrets.GITHUB_TOKEN}}
 
         - name: Set up Docker Buildx
           uses: docker/setup-buildx-action@v3
           with:
             driver: docker-container
+        
+        - name: Get current time
+          id: current_time_step
+          run: echo "::set-output name=time::$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
             
         - name: Build and push
           uses: docker/build-push-action@v6
@@ -32,7 +43,11 @@ jobs:
             context: ./NineLanCacheUI
             file: ./NineLanCacheUI/Dockerfile
             push: true
-            tags: ${{ secrets.DOCKER_USERNAME }}/nine-lancache-ui:ui-beta
+            tags: |
+              ${{ secrets.DOCKER_USERNAME }}/nine-lancache-ui:ui-beta
+              ghcr.io/ninepiece2/ninelancacheui:ui-beta
             build-args: |
-              SYNCFUSION_LICENSE=${{ secrets.SyncfusionLicense }}
+              VERSION=beta
+              BUILD_DATE=${{ steps.current_time_step.outputs.time }}
+              VCS_REF=${{ github.sha }}
         

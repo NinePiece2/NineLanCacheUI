@@ -1,27 +1,18 @@
 'use client';
-import {
-  AccumulationChartComponent,
-  AccumulationSeriesCollectionDirective,
-  AccumulationSeriesDirective,
-  Inject,
-  PieSeries,
-  AccumulationTooltip,
-  AccumulationLegend
-} from '@syncfusion/ej2-react-charts';
-
-import {
-  ChartComponent,
-  SeriesCollectionDirective,
-  SeriesDirective,
-  SplineSeries,
-  Tooltip,
-  DateTime,
-} from '@syncfusion/ej2-react-charts';
-
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { formatBytes, chartPalette, formatBits } from "../../lib/Utilities";
 import React, { useEffect, useState, useCallback } from 'react';
 import { getSignalRConnection, startConnection } from "../../lib/SignalR";
+import { AnimatedPage, AnimatedCard } from "@/components/animations";
+import { DateRangeFilter } from "@/components/DateRangeFilter";
 
+// Local types for Recharts tooltip/label payloads to avoid `any`
+type PieTooltipItem = {
+  payload?: { x?: string; y?: number } | undefined;
+  name?: string | undefined;
+  value?: number | undefined;
+};
 interface ServiceData {
   service: string;
   totalBytes: number;
@@ -108,6 +99,9 @@ export default function Home() {
 
   const [uploadSeries, setUploadSeries] = useState<{ x: Date; y: number }[]>([]);
 
+  // Compute a sensible tick interval for the X axis so ticks align with grid markers
+  const xTickInterval = uploadSeries && uploadSeries.length > 7 ? Math.ceil(uploadSeries.length / 7) : 0;
+
 
   useEffect(() => {
     setStoredFilters({ selectedRange, customDays, excludeIPs });
@@ -183,26 +177,25 @@ export default function Home() {
       };
     }, [fetchAll]);
 
-  const commonProps = {
-    legendSettings: {
-      visible: true,
-      textStyle: {
-        size: '16px',
-        color: '#ededed',
-        fontFamily: 'Poppins, sans-serif',
-        fontWeight: '600',
-      },
-    },
-    tooltip: {
-      enable: true,
-      textStyle: {
-        fontFamily: 'Poppins, sans-serif',
-        size: '14px',
-        fontWeight: '500',
-        color: '#ffffff'
-      },
-      fill: '#0a0a0a',
-    },
+  const COLORS = ['#4CAF50', '#ff3131ff'];
+  
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: PieTooltipItem[] }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      const value = data.payload?.y ?? data.value ?? 0;
+      return (
+          <div className="bg-card p-2 rounded border border-border">
+            <p className="text-foreground font-['Poppins'] text-sm">
+            {`${data.payload?.x || data.name || 'Unknown'}: ${formatBytes(value)}`}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const renderLabel = (entry: { name?: string; x?: string; value?: number; y?: number }) => {
+    return `${entry.name || entry.x}: ${formatBytes(entry.value ?? entry.y ?? 0)}`;
   };
 
   useEffect(() => {
@@ -266,233 +259,227 @@ export default function Home() {
   }, []);
 
   return (
-    <div>
-      <div className="grid grid-cols-2 gap-8 p-6">
+    <AnimatedPage>
+      <div className="grid grid-cols-2 gap-6 p-6 max-w-[98%] mx-auto">
         {/* Charts */}
-        <div className="w-full h-96">
-          <h2 className="text-lg font-semibold mb-2 text-center text-white">Cache Hit vs Miss (Bytes)</h2>
-          {hitMissData[0].y > 0 && (
-            <AccumulationChartComponent
-              {...commonProps}
-              tooltipRender={(args) => {
-                if (args.point?.y) {
-                  args.text = `${args.point.x}: ${formatBytes(args.point.y)}`;
-                }
-              }}
-            >
-              <Inject services={[PieSeries, AccumulationTooltip, AccumulationLegend]} />
-              <AccumulationSeriesCollectionDirective>
-                <AccumulationSeriesDirective
-                  dataSource={hitMissData}
-                  xName="x"
-                  yName="y"
-                  type="Pie"
-                  dataLabel={{ visible: true, name: 'x' }}
-                  palettes={['#4CAF50', '#ff3131ff']}
-                />
-              </AccumulationSeriesCollectionDirective>
-            </AccumulationChartComponent>
-          )}
-        </div>
+        <AnimatedCard delay={0.1}>
+          <Card className="w-full bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-center text-foreground">Cache Hit vs Miss (Bytes)</CardTitle>
+            </CardHeader>
+            <CardContent className="h-64">
+              {hitMissData[0].y > 0 && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={hitMissData}
+                      dataKey="y"
+                      nameKey="x"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={renderLabel}
+                    >
+                      {hitMissData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                          <Legend 
+                            wrapperStyle={{ 
+                              fontFamily: 'Poppins, sans-serif',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              color: 'var(--foreground)'
+                            }} 
+                          />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </AnimatedCard>
 
-        <div className="w-full h-96">
-          <h2 className="text-lg font-semibold mb-2 text-center text-white">Download Requests by Service</h2>
-          {serviceSplitData.length > 0 && (
-            <AccumulationChartComponent
-              {...commonProps}
-              tooltipRender={(args) => {
-                if (args.point?.y) {
-                  args.text = `${args.point.x}: ${formatBytes(args.point.y)}`;
-                }
-              }}
-            >
-              <Inject services={[PieSeries, AccumulationTooltip, AccumulationLegend]} />
-              <AccumulationSeriesCollectionDirective>
-                <AccumulationSeriesDirective
-                  dataSource={serviceSplitData}
-                  xName="x"
-                  yName="y"
-                  type="Pie"
-                  dataLabel={{ visible: true, name: 'x' }}
-                  palettes={chartPalette}
-                />
-              </AccumulationSeriesCollectionDirective>
-            </AccumulationChartComponent>
-          )}
-        </div>
+        <AnimatedCard delay={0.2}>
+          <Card className="w-full bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-center text-foreground">Download Requests by Service</CardTitle>
+            </CardHeader>
+            <CardContent className="h-64">
+              {serviceSplitData.length > 0 && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={serviceSplitData}
+                      dataKey="y"
+                      nameKey="x"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={renderLabel}
+                    >
+                      {serviceSplitData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={chartPalette[index % chartPalette.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend 
+                      wrapperStyle={{ 
+                        fontFamily: 'Poppins, sans-serif',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: 'var(--foreground)'
+                      }} 
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </AnimatedCard>
 
-        <div className="w-full h-96">
-          <h2 className="text-lg font-semibold mb-2 text-center text-white">Miss Bytes by Service</h2>
-          {missBytesByService.length > 0 && (
-            <AccumulationChartComponent
-              {...commonProps}
-              tooltipRender={(args) => {
-                if (args.point?.y) {
-                  args.text = `${args.point.x}: ${formatBytes(args.point.y)}`;
-                }
-              }}
-            >
-              <Inject services={[PieSeries, AccumulationTooltip, AccumulationLegend]} />
-              <AccumulationSeriesCollectionDirective>
-                <AccumulationSeriesDirective
-                  dataSource={missBytesByService}
-                  xName="x"
-                  yName="y"
-                  type="Pie"
-                  dataLabel={{ visible: true, name: 'x' }}
-                  palettes={chartPalette}
-                />
-              </AccumulationSeriesCollectionDirective>
-            </AccumulationChartComponent>
-          )}
-        </div>
+        <AnimatedCard delay={0.3}>
+          <Card className="w-full bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-center text-foreground">Miss Bytes by Service</CardTitle>
+            </CardHeader>
+            <CardContent className="h-64">
+              {missBytesByService.length > 0 && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={missBytesByService}
+                      dataKey="y"
+                      nameKey="x"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={renderLabel}
+                    >
+                      {missBytesByService.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={chartPalette[index % chartPalette.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend 
+                      wrapperStyle={{ 
+                        fontFamily: 'Poppins, sans-serif',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: 'var(--foreground)'
+                      }} 
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </AnimatedCard>
 
-        <div className="w-full h-96">
-          <h2 className="text-lg font-semibold mb-2 text-center text-white">Hit Bytes by Service</h2>
-          {hitBytesByService.length > 0 && (
-            <AccumulationChartComponent
-              {...commonProps}
-              tooltipRender={(args) => {
-                if (args.point?.y) {
-                  args.text = `${args.point.x}: ${formatBytes(args.point.y)}`;
-                }
-              }}
-            >
-              <Inject services={[PieSeries, AccumulationTooltip, AccumulationLegend]} />
-              <AccumulationSeriesCollectionDirective>
-                <AccumulationSeriesDirective
-                  dataSource={hitBytesByService}
-                  xName="x"
-                  yName="y"
-                  type="Pie"
-                  dataLabel={{ visible: true, name: 'x' }}
-                  palettes={chartPalette}
-                />
-              </AccumulationSeriesCollectionDirective>
-            </AccumulationChartComponent>
-          )}
-        </div>
+        <AnimatedCard delay={0.4}>
+          <Card className="w-full bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-center text-foreground">Hit Bytes by Service</CardTitle>
+            </CardHeader>
+            <CardContent className="h-64">
+              {hitBytesByService.length > 0 && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={hitBytesByService}
+                      dataKey="y"
+                      nameKey="x"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={renderLabel}
+                    >
+                      {hitBytesByService.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={chartPalette[index % chartPalette.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend 
+                      wrapperStyle={{ 
+                        fontFamily: 'Poppins, sans-serif',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: 'var(--foreground)'
+                      }} 
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </AnimatedCard>
       </div>
-      <div className="container flex flex-wrap items-center gap-4 px-8 py-4 bg-gray-900 rounded-md shadow-md" style={{ width: '100%', marginTop: '0.25rem', padding: '15px', marginBottom: '2rem'}}>
-        <label htmlFor="range" className="text-white font-semibold whitespace-nowrap">
-          Date Range:
-        </label>
-
-        <div className="flex items-center gap-2">
-          <select
-            id="range"
-            className="text-white px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-            style={{color: '#ffffff', backgroundColor: '#1a1a1a'}}
-            value={selectedRange}
-            onChange={(e) => setSelectedRange(e.target.value)}
-          >
-            <option value="0">All time</option>
-            <option value="30">Last 30 days</option>
-            <option value="7">Last 7 days</option>
-            <option value="1">Last 1 day</option>
-            <option value="custom">Custom</option>
-          </select>
-
-          {selectedRange === 'custom' && (
-            <input
-              type="number"
-              min={1}
-              max={365}
-              placeholder="Days"
-              className="text-white px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-              style={{ margin: '0', width: '5rem', color: '#ffffff', backgroundColor: '#1a1a1a' }}
-              value={customDays}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (/^\d{0,3}$/.test(val)) {
-                  setCustomDays(val);
-                }
-              }}
-            />
-          )}
+      <DateRangeFilter
+        selectedRange={selectedRange}
+        customDays={customDays}
+        excludeIPs={excludeIPs}
+        onRangeChange={setSelectedRange}
+        onCustomDaysChange={setCustomDays}
+        onExcludeIPsChange={setExcludeIPs}
+        delay={0.5}
+      />
+      <AnimatedCard delay={0.6}>
+        <div className="w-full mt-6 px-6 max-w-[98%] mx-auto" style={{ marginBottom: '2rem' }}>
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-foreground">Cache Usage Speed</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {uploadSeries.length > 0 && (
+                <div className="w-full h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={uploadSeries} style={{ fontFamily: 'Poppins, sans-serif' }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                      <XAxis
+                        dataKey="x"
+                        tickFormatter={(value) => new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        stroke="var(--foreground)"
+                        style={{ fontFamily: 'Poppins', fontSize: '12px' }}
+                        tick={{ fontSize: 12 }}
+                        interval={xTickInterval}
+                      />
+                      <YAxis 
+                        tickFormatter={(value) => formatBits(value) + '/s'}
+                        stroke="var(--foreground)"
+                        style={{ fontFamily: 'Poppins', fontSize: '12px' }}
+                      />
+                      <Tooltip 
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0];
+                              return (
+                              <div className="bg-card p-2 rounded border border-border">
+                                <p className="text-foreground font-['Poppins'] text-sm">
+                                  {new Date(data.payload.x).toLocaleTimeString([], { hour12: false })} : {formatBits(data.value as number)}/s
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="y" 
+                        stroke="var(--color-green-500)"
+                        strokeWidth={3}
+                        dot={false}
+                        name="Usage Speed"
+                        isAnimationActive={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
-
-        <button
-          className={`ml-auto px-5 py-2 rounded-md font-semibold transition-colors duration-300 ${
-            excludeIPs ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'
-          } text-white shadow-md whitespace-nowrap`}
-          onClick={() => setExcludeIPs(!excludeIPs)}
-          type="button"
-        >
-          {excludeIPs ? 'Exclude IPs' : 'Include All IPs'}
-        </button>
-      </div>
-      <div className="w-full mt-8 px-8 container" style={{ marginBottom: '4rem' }}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-white">Cache Usage Speed</h2>
-        </div>
-
-        {uploadSeries.length > 0 && (
-          <div className="w-full h-96 p-4 rounded-lg" style={{marginBottom: '3rem'}}>
-            <ChartComponent
-              className='border rounded-lg'
-              style={{ borderColor: '#0a0a0a', borderWidth: '1px' }}
-              primaryXAxis={{
-                valueType: 'DateTime',
-                labelFormat: 'HH:mm:ss',
-                title: 'Time',
-                labelStyle: { color: '#fff', fontFamily: 'Poppins' },
-                titleStyle: { color: '#fff', fontFamily: 'Poppins' },
-                intervalType: 'Seconds',
-              }}
-              primaryYAxis={{
-                title: 'Speed',
-                minimum: 0,
-                labelStyle: { color: '#fff', fontFamily: 'Poppins' },
-                titleStyle: { color: '#fff', fontFamily: 'Poppins' },
-                labelIntersectAction: 'Rotate45',
-              }}
-              axisLabelRender={(args) => {
-                if (args.axis.name === 'primaryYAxis') {
-                  const num = Number(args.text);
-                  if (!isNaN(num)) {
-                    args.text = formatBits(num) + '/s';
-                  }
-                }
-              }}
-              tooltip={{
-                enable: true,
-                textStyle: {
-                  fontFamily: 'Poppins, sans-serif',
-                  size: '14px',
-                  color: '#ffffff'  
-                },
-                fill: '#0a0a0a',
-              }}
-              tooltipRender={(args) => {
-                const y = args.point?.y;
-                const x = args.point?.x;
-
-                if (y !== undefined && y !== null && x) {
-                  const time = new Date(x).toLocaleTimeString(undefined, { hour12: false }); // "HH:mm:ss"
-                  args.text = `${time} : ${formatBits(y)}/s`;
-                }
-              }}
-              background="#1a1a1a"
-              palettes={['#4CAF50']}
-            >
-              <Inject services={[SplineSeries, Tooltip, DateTime]} />
-              <SeriesCollectionDirective>
-                <SeriesDirective
-                  dataSource={uploadSeries}
-                  xName="x"
-                  yName="y"
-                  type="Spline"
-                  width={4}
-                  marker={{ visible: false }}
-                  name="Usage Speed"
-                  animation={{ enable: false , duration: 1000, delay: 0 }}
-                />
-              </SeriesCollectionDirective>
-            </ChartComponent>
-          </div>
-        )}
-      </div>
-    </div>
+      </AnimatedCard>
+    </AnimatedPage>
   );
 }
