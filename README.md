@@ -8,16 +8,18 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](CONTRIBUTING.md)
 
 ## Table Of Contents
-- [Introduction](#introduction)
-- [Screenshots](#screenshots)
-- [Install/Run Instructions](#installrun-instructions)
-  - [Docker Compose File](#docker-compose-file)
-  - [Configuration variable explanation](#configuration-variable-explanation)
-- [Contributing](#contributing)
-- [Troubleshooting](#troubleshooting)
-  - [Issue: My access.log file is updated but the backend isn't reading the new lines](#issue-my-accesslog-file-is-updated-but-the-backend-isnt-reading-the-new-lines)
-- [License](#license)
-- [References](#references)
+- [NineLanCacheUI](#ninelancacheui)
+  - [Table Of Contents](#table-of-contents)
+  - [Introduction](#introduction)
+  - [Screenshots](#screenshots)
+  - [Install/Run Instructions](#installrun-instructions)
+    - [Docker Compose File:](#docker-compose-file)
+    - [Configuration variable explanation](#configuration-variable-explanation)
+  - [Contributing](#contributing)
+  - [Troubleshooting](#troubleshooting)
+    - [Issue: My access.log file is updated but the backend isn't reading the new lines](#issue-my-accesslog-file-is-updated-but-the-backend-isnt-reading-the-new-lines)
+  - [License](#license)
+  - [References:](#references)
 
 
 ## Introduction
@@ -96,6 +98,7 @@ services:
     environment:
       - API_BASE_URL=http://localhost:7401
       - API_PORT=7401
+      - NGINX_PORT=8080 # output port (where you access the site)
       - AllowedHosts=*
 ```
 
