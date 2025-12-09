@@ -1,4 +1,4 @@
-FROM node:22-alpine AS build
+FROM node:24-alpine AS build
 
 ARG SYNCFUSION_LICENSE
 ARG VERSION=dev
@@ -17,7 +17,7 @@ RUN export SYNCFUSION_LICENSE=""
 
 RUN npm run build
 
-FROM node:22-alpine AS deploy
+FROM node:24-alpine AS deploy
 
 ARG VERSION=dev
 ARG BUILD_DATE

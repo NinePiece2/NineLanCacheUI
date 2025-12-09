@@ -1,0 +1,9 @@
+node_modules
+.git
+.env
+**/node_modules
+**/.next
+Dockerfile
+npm-debug.log
+.husky
+.vscode
