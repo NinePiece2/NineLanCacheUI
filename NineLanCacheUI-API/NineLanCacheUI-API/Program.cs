@@ -11,6 +11,7 @@ using NineLanCacheUI_API.Hubs;
 using Microsoft.AspNetCore.Rewrite;
 using NineLanCacheUI_API.Helpers;
 using NineLanCacheUI_API.Services.NetworkMonitor;
+using Microsoft.AspNetCore.HttpOverrides;
 namespace NineLanCacheUI_API
 {
     public class Program
@@ -122,6 +123,12 @@ namespace NineLanCacheUI_API
             var app = builder.Build();
 
             app.UseResponseCompression();
+
+            // Configure forwarded headers for proxy (nginx)
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
+            });
 
             // Applying migrations
             using (var scope = app.Services.CreateScope())

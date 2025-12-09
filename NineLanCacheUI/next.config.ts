@@ -11,7 +11,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'steamdb.info',
       },
-    ]
+    ],
+    // Disable optimized images in production Docker environment to avoid 
+    // "url parameter is not allowed" error when behind nginx proxy
+    unoptimized: true,
   },
 };
 

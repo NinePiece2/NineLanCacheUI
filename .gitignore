@@ -368,3 +368,4 @@ manifests
 LanCacheUIData
 databases
 .DS_Store
+backendData

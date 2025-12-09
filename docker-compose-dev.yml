@@ -1,0 +1,32 @@
+services:
+  api:
+    build: 
+      context: ./NineLanCacheUI-API
+      dockerfile: ./NineLanCacheUI-API/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "7401:7401"
+    environment:
+      - LanCacheLogsDirectory=/var/ninelancacheui/lancachelogs
+      - LanCacheUIDataDirectory=/var/ninelancacheuidata
+      - ConnectionStrings__DefaultConnection=Data Source={LanCacheUIDataDirectory}/database/nine-lancache-ui.db;
+      - TZ=America/Toronto
+      - ASPNETCORE_ENVIRONMENT=Production
+      - LANG=en_CA.UTF-8
+      - DirectSteamIntegration=false
+      - SkipLinesBasedOnBytesRead=false
+      - ASPNETCORE_HTTP_PORTS=7401
+      - ASPNETCORE_URLS=http://host.docker.internal:7401
+    volumes:
+      - "./backendData:/var/ninelancacheuidata"
+      - "/Volumes/Data/Romit/temp:/var/ninelancacheui/lancachelogs:ro"
+  ui:
+    build: ./NineLanCacheUI
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+      - "8080:8080"
+    environment:
+      - API_BASE_URL=http://host.docker.internal:7401
+      - API_PORT=7401
+      - AllowedHosts=*
