@@ -3,8 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![UI Build](https://img.shields.io/github/actions/workflow/status/NinePiece2/NineLanCacheUI/build-ui.yml?label=UI%20Build&logo=github&style=flat-square)](https://github.com/NinePiece2/NineLanCacheUI/actions/workflows/build-ui.yml)
 [![API Build](https://img.shields.io/github/actions/workflow/status/NinePiece2/NineLanCacheUI/build-api.yml?label=API%20Build&logo=github&style=flat-square)](https://github.com/NinePiece2/NineLanCacheUI/actions/workflows/build-api.yml)
-[![UI Pulls](https://img.shields.io/docker/pulls/ninepiece2/nine-lancache-ui.svg?label=UI%20Pulls&logo=docker&style=flat-square)](https://hub.docker.com/r/ninepiece2/nine-lancache-ui/tags?name=UI)
-[![API Pulls](https://img.shields.io/docker/pulls/ninepiece2/nine-lancache-ui.svg?label=API%20Pulls&logo=docker&style=flat-square)](https://hub.docker.com/r/ninepiece2/nine-lancache-ui/tags?name=API)
+[![Docker Pulls](https://img.shields.io/docker/pulls/ninepiece2/nine-lancache-ui.svg?label=Docker%20Pulls&logo=docker&style=flat-square)](https://hub.docker.com/r/ninepiece2/nine-lancache-ui)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](CONTRIBUTING.md)
 
 ## Table Of Contents
@@ -13,6 +12,7 @@
   - [Introduction](#introduction)
   - [Screenshots](#screenshots)
   - [Install/Run Instructions](#installrun-instructions)
+    - [Versions \& Docker Images](#versions--docker-images)
     - [Docker Compose File:](#docker-compose-file)
     - [Configuration variable explanation](#configuration-variable-explanation)
   - [Contributing](#contributing)
@@ -31,33 +31,55 @@ The Backend/API runs a .NET 9 Web API and the Frontend/UI uses NextJS and Nginx.
 
 ## Screenshots
 
-Shows a few statistics about the usage per service:
-
-[<img src=images/Dashboard.png height=400>](images/Dashboard.png)
-
-Shows a graph for the outbound usage of a given interface (Changable in Settings):
-
-[<img src=images/DashboardSpeed.png height=300>](images/DashboardSpeed.png)
+<details>
+<summary>Version 1</summary>
 
 Shows recent downloads by service:
 
-[<img src=images/RecentDownloads.png height=400>](images/RecentDownloads.png)
+[<img src="images/v1/RecentDownloads.png" height="400">](images/v1/RecentDownloads.png)
 
 Shows recent download steam games and their download progress based on manifest size:
 
-[<img src=images/RecentSteamDownloads.png height=400>](images/RecentSteamDownloads.png)
+[<img src="images/v1/RecentSteamDownloads.png" height="400">](images/v1/RecentSteamDownloads.png)
 
 Shows all games that have been downloaded through steam:
 
-[<img src=images/AllSteamGames.png height=400>](images/AllSteamGames.png)
+[<img src="images/v1/AllSteamGames.png" height="400">](images/v1/AllSteamGames.png)
 
 Shows the hit and miss statistics of every client:
 
-[<img src=images/StatsPage.png height=400>](images/StatsPage.png)
+[<img src="images/v1/StatsPage.png" height="400">](images/v1/StatsPage.png)
 
 Shows the settings page where the active interface can be selected for the graph and excluded IPs can be added:
 
-[<img src=images/SettingsPage.png height=375>](images/SettingsPage.png)
+[<img src="images/v1/SettingsPage.png" height="375">](images/v1/SettingsPage.png)
+
+</details>
+
+<details open>
+<summary>Version 2</summary>
+
+Shows recent downloads by service:
+
+[<img src="images/v2/RecentDownloads.png" height="400">](images/v2/RecentDownloads.png)
+
+Shows recent download steam games and their download progress based on manifest size:
+
+[<img src="images/v2/RecentSteamDownloads.png" height="400">](images/v2/RecentSteamDownloads.png)
+
+Shows all games that have been downloaded through steam:
+
+[<img src="images/v2/AllSteamGames.png" height="400">](images/v2/AllSteamGames.png)
+
+Shows the hit and miss statistics of every client:
+
+[<img src="images/v2/StatsPage.png" height="400">](images/v2/StatsPage.png)
+
+Shows the settings page where the active interface can be selected for the graph and excluded IPs can be added:
+
+[<img src="images/v2/SettingsPage.png" height="375">](images/v2/SettingsPage.png)
+
+</details>
 
 ## Install/Run Instructions
 1. Create a folder somewhere on the system for the persistant data to be stored. For exmple ```mkdir backendData``` then give it permissions with something like ```chown 777 backendData```.
@@ -65,8 +87,36 @@ Shows the settings page where the active interface can be selected for the graph
 3. Change the Timezone and Lang information to help with debugging inside the container.
 4. Change the dns to your LanCache.
 5. Run ```docker compose up -d```
-6. Visit http://LanCacheIP:8080 where LanCacheIP is the machine that is running NineLanCacheUI (In my case 192.168.15.200).
-   
+6. Visit http://LanCacheIP:NGINX_PORT where LanCacheIP is the machine that is running NineLanCacheUI (In my case http://192.168.15.200:8080).
+
+### Versions & Docker Images
+
+There are two supported UI/API tracks:
+
+- **Version 1 (v1)**: the legacy UI that uses the original Syncfusion UI elements. It is considered the older release and does not receive active feature updates (security/critical fixes may be provided as needed).
+- **Version 2 (v2)**: the new UI which uses shadcn/ui and contains the latest improvements and ongoing updates.
+
+Docker image tags you can use (examples):
+
+- `ninepiece2/nine-lancache-ui:ui-1.0` and `ninepiece2/nine-lancache-ui:api-1.0` (stable v1 tags)
+- Patch tags for v1: `ui-1.01` / `api-1.01` (if available)
+- Beta / newer v2 builds: `ninepiece2/nine-lancache-ui:ui-beta` and `ninepiece2/nine-lancache-ui:api-beta`
+- There are also `ui` / `api` tags that may point to the current default image on Docker Hub (check the repository tags to confirm which version they currently reference).
+
+Where the images are published:
+
+- v1 images are available on Docker Hub.
+- v2 images are published on Docker Hub and the GitHub Container Registry (GHCR) — check the repository tags/pages for the exact image name and tag.
+
+Change which image you run by editing the `image:` lines in your `docker-compose.yml`. Example (replace the tag with the one you want):
+
+```yml
+  ui:
+    image: ninepiece2/nine-lancache-ui:ui-1.01
+  api:
+    image: ninepiece2/nine-lancache-ui:api-1.01
+```
+
 ### Docker Compose File:
 
 docker-compose.yml:
@@ -130,6 +180,7 @@ services:
 | AllowedHosts | Sets the HOSTS header for CORS. Leave at * unless you know what you're doing | * |
 | API_BASE_URL | The backend url where the frontend connects to. | http://localhost:7401 |
 | API_PORT | The backend port where the frontend connects to in nginx. | 7401 |
+| NGINX_PORT | The output port (where you access the site) | 8080 |
 
 ## Contributing
 
