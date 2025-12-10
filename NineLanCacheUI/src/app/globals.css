@@ -5,16 +5,19 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-sans: 'Poppins', sans-serif;
+  --font-sans: "Poppins", sans-serif;
 }
 
-body, h1, p, text {
+body,
+h1,
+p,
+text {
   margin: 0;
   padding: 0;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
 }
 
-text{
+text {
   color: "white";
 }
 
@@ -50,7 +53,7 @@ header {
 h1 {
   font-size: 24px;
   margin-bottom: 10px;
-  color: #4CAF50;
+  color: #4caf50;
 }
 
 h2 {
@@ -90,14 +93,13 @@ section {
   padding: 30px;
 }
 
-a:hover{
-  color: #4CAF50;
+a:hover {
+  color: #4caf50;
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
-
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -221,4 +223,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .recharts-surface,
 .recharts-text {
   font-family: var(--font-sans) !important;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent);
 }

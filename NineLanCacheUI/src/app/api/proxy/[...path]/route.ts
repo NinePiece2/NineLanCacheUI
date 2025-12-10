@@ -2,16 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 
 const API_BASE_URL = process.env.API_BASE_URL;
 
-async function ProxyRequest(
-    url: string,
-    options: RequestInit = {}
-): Promise<Response> {
-    const headers = new Headers(options.headers || {});
-    if (!headers.has('Content-Type')) {
-      headers.set('Content-Type', 'application/json');
-    }
-  
-    return fetch(url, { ...options, headers });
+async function ProxyRequest(url: string, options: RequestInit = {}): Promise<Response> {
+  const headers = new Headers(options.headers || {});
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+  // Avoid automatic redirect-following to prevent redirect loops when backend
+  // redirects between HTTP/HTTPS or issues redirects for auth.
+  const fetchOptions: RequestInit = { ...options, headers, redirect: "manual" };
+  return fetch(url, fetchOptions);
 }
 
 type RouteContext = {
@@ -64,6 +63,17 @@ async function proxyRequest(req: NextRequest, params: { path: string[] }, method
     };
 
     const response = await ProxyRequest(url.toString(), options);
+
+    // If backend returned a redirect, forward status and Location header to client
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get("location") || undefined;
+      const body = await response.text();
+      const headersToSend: Record<string, string> = {};
+      if (location) headersToSend["location"] = location;
+      const res = new NextResponse(body, { status: response.status, headers: headersToSend });
+      return res;
+    }
+
     const contentType = response.headers.get("content-type");
 
     if (contentType?.includes("application/json")) {
@@ -89,8 +99,6 @@ function filterHeaders(headers: Headers): Record<string, string> {
     "upgrade",
   ];
   return Object.fromEntries(
-    Array.from(headers.entries()).filter(
-      ([key]) => !disallowed.includes(key.toLowerCase())
-    )
+    Array.from(headers.entries()).filter(([key]) => !disallowed.includes(key.toLowerCase())),
   );
 }

@@ -17,23 +17,23 @@ const PAGE_SIZE = 6;
 const PreloadableImage = ({ appId }: { appId: number }) => {
   const imageUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
   const fallbackUrl = "https://steamdb.info/static/img/applogo.svg";
-  
+
   const [currentSrc, setCurrentSrc] = useState(imageUrl);
   const hasErrored = useRef(false);
 
   const handleError = () => {
-    console.log('Image error for appId:', appId, 'hasErrored:', hasErrored.current);
+    console.log("Image error for appId:", appId, "hasErrored:", hasErrored.current);
     if (!hasErrored.current) {
       hasErrored.current = true;
       setCurrentSrc(fallbackUrl);
-      console.log('Switched to fallback for appId:', appId);
-      imageCache.setStatus(imageUrl, 'missing');
+      console.log("Switched to fallback for appId:", appId);
+      imageCache.setStatus(imageUrl, "missing");
     }
   };
 
   const handleLoad = () => {
     if (currentSrc === imageUrl) {
-      imageCache.setStatus(imageUrl, 'exists');
+      imageCache.setStatus(imageUrl, "exists");
     }
   };
 
@@ -44,7 +44,7 @@ const PreloadableImage = ({ appId }: { appId: number }) => {
         href={`https://steamdb.info/app/${appId}/`}
         target="_blank"
         rel="noopener noreferrer"
-        style={{maxHeight: "215px"}}
+        style={{ maxHeight: "215px" }}
       >
         {currentSrc === fallbackUrl ? (
           <object
@@ -54,7 +54,12 @@ const PreloadableImage = ({ appId }: { appId: number }) => {
             height={172}
             className="object-cover rounded shadow bg-muted"
           >
-            <div className="flex items-center justify-center" style={{width: '368px', height: '172px'}}>Steam App</div>
+            <div
+              className="flex items-center justify-center"
+              style={{ width: "368px", height: "172px" }}
+            >
+              Steam App
+            </div>
           </object>
         ) : (
           <NextImage
@@ -84,9 +89,7 @@ export default function SteamGamesPage() {
       .then((res) => res.json())
       .then((data: Game[]) => {
         // Deduplicate by appid to prevent memory bloat
-        const uniqueGames = Array.from(
-          new Map(data.map(game => [game.appid, game])).values()
-        );
+        const uniqueGames = Array.from(new Map(data.map((game) => [game.appid, game])).values());
         setGames(uniqueGames);
       })
       .catch((err) => {
@@ -98,53 +101,56 @@ export default function SteamGamesPage() {
     if (!filterText.trim()) return true;
     const lowerFilter = filterText.toLowerCase();
     return (
-      game.name.toLowerCase().includes(lowerFilter) ||
-      game.appid.toString().includes(lowerFilter)
+      game.name.toLowerCase().includes(lowerFilter) || game.appid.toString().includes(lowerFilter)
     );
   });
 
   const totalPages = Math.ceil(filteredGames.length / PAGE_SIZE) || 1;
   const effectiveCurrentPage = currentPage > totalPages ? 1 : currentPage;
 
-  const pagedGames = filteredGames.slice((effectiveCurrentPage - 1) * PAGE_SIZE, effectiveCurrentPage * PAGE_SIZE);
+  const pagedGames = filteredGames.slice(
+    (effectiveCurrentPage - 1) * PAGE_SIZE,
+    effectiveCurrentPage * PAGE_SIZE,
+  );
 
   const handleFilterChange = (value: string) => {
     setFilterText(value);
     setCurrentPage(1);
   };
 
-   useEffect(() => {
-       const connection = getSignalRConnection();
-   
-       const handler = () => {
-         fetch("/api/proxy/SteamGames/GetSteamGames")
-          .then((res) => res.json())
-          .then((data: Game[]) => {
-            // Deduplicate by appid to prevent memory bloat
-            const uniqueGames = Array.from(
-              new Map(data.map(game => [game.appid, game])).values()
-            );
-            setGames(uniqueGames);
-          })
-          .catch((err) => {
-            console.error("Error fetching games:", err);
-          });
-       };
-   
-       connection.on("UpdateDownloadEvents", handler);
-   
-       startConnection();
-   
-       return () => {
-         connection.off("UpdateDownloadEvents", handler);
-       };
-     }, []);
+  useEffect(() => {
+    const connection = getSignalRConnection();
+
+    const handler = () => {
+      fetch("/api/proxy/SteamGames/GetSteamGames")
+        .then((res) => res.json())
+        .then((data: Game[]) => {
+          // Deduplicate by appid to prevent memory bloat
+          const uniqueGames = Array.from(new Map(data.map((game) => [game.appid, game])).values());
+          setGames(uniqueGames);
+        })
+        .catch((err) => {
+          console.error("Error fetching games:", err);
+        });
+    };
+
+    connection.on("UpdateDownloadEvents", handler);
+
+    startConnection();
+
+    return () => {
+      connection.off("UpdateDownloadEvents", handler);
+    };
+  }, []);
 
   return (
     <AnimatedPage>
       <div className="p-4 mx-auto bg-background" style={{ width: "98%", maxWidth: "1600px" }}>
         <AnimatedCard delay={0.1}>
-          <div className="mb-4 flex items-center gap-2" style={{ maxWidth: "25%", minWidth: "200px" }}>
+          <div
+            className="mb-4 flex items-center gap-2"
+            style={{ maxWidth: "25%", minWidth: "200px" }}
+          >
             <Input
               type="text"
               placeholder="Search by Name or AppId..."
@@ -168,7 +174,11 @@ export default function SteamGamesPage() {
         <AnimatedCard delay={0.2}>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {pagedGames.map((game, idx) => (
-              <div key={idx} className="rounded shadow-lg p-4 bg-card border border-border hover:border-foreground/50 transition" style={{}}>
+              <div
+                key={idx}
+                className="rounded shadow-lg p-4 bg-card border border-border hover:border-foreground/50 transition"
+                style={{}}
+              >
                 <PreloadableImage key={game.appid} appId={game.appid} />
                 <h2 className="text-lg font-bold text-center text-foreground mt-2">{game.name}</h2>
               </div>

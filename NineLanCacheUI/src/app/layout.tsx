@@ -79,37 +79,61 @@ export default function RootLayout({
                     </Link>
                     <div className="hidden md:block h-6 w-px bg-border mx-3" aria-hidden="true" />
                     <nav className="hidden md:flex items-center gap-1 flex-1 ml-4">
-                      <Button variant="ghost" asChild className="text-foreground hover:text-green-500 hover:bg-green-500/10 transition-colors text-lg">
+                      <Button
+                        variant="ghost"
+                        asChild
+                        className="text-foreground hover:text-green-500 hover:bg-green-500/10 transition-colors text-lg"
+                      >
                         <Link href="/" className="flex items-center gap-1">
                           <BarChart3 className="w-4 h-4" />
                           <span className="hidden lg:inline">Dashboard</span>
                         </Link>
                       </Button>
-                      <Button variant="ghost" asChild className="text-foreground hover:text-green-500 hover:bg-green-500/10 transition-colors text-lg">
+                      <Button
+                        variant="ghost"
+                        asChild
+                        className="text-foreground hover:text-green-500 hover:bg-green-500/10 transition-colors text-lg"
+                      >
                         <Link href="/RecentDownloads" className="flex items-center gap-1">
                           <Download className="w-4 h-4" />
                           <span className="hidden lg:inline">Recent Downloads</span>
                         </Link>
                       </Button>
-                      <Button variant="ghost" asChild className="text-foreground hover:text-green-500 hover:bg-green-500/10 transition-colors text-lg">
+                      <Button
+                        variant="ghost"
+                        asChild
+                        className="text-foreground hover:text-green-500 hover:bg-green-500/10 transition-colors text-lg"
+                      >
                         <Link href="/RecentSteamDownloads" className="flex items-center gap-1">
                           <Gamepad2 className="w-4 h-4" />
                           <span className="hidden lg:inline">Steam Downloads</span>
                         </Link>
                       </Button>
-                      <Button variant="ghost" asChild className="text-foreground hover:text-green-500 hover:bg-green-500/10 transition-colors text-lg">
+                      <Button
+                        variant="ghost"
+                        asChild
+                        className="text-foreground hover:text-green-500 hover:bg-green-500/10 transition-colors text-lg"
+                      >
                         <Link href="/SteamGamesDownloaded" className="flex items-center gap-1">
                           <Gamepad2 className="w-4 h-4" />
                           <span className="hidden lg:inline">Games</span>
                         </Link>
                       </Button>
-                      <Button variant="ghost" asChild className="text-foreground hover:text-green-500 hover:bg-green-500/10 transition-colors text-lg">
+                      <Button
+                        variant="ghost"
+                        asChild
+                        className="text-foreground hover:text-green-500 hover:bg-green-500/10 transition-colors text-lg"
+                      >
                         <Link href="/Stats" className="flex items-center gap-1">
                           <Activity className="w-4 h-4" />
                           <span className="hidden lg:inline">Stats</span>
                         </Link>
                       </Button>
-                      <Button variant="ghost" asChild className="text-foreground hover:text-green-500 hover:bg-green-500/10 transition-colors text-lg">
+                      <Button
+                        variant="ghost"
+                        asChild
+                        className="text-foreground hover:text-green-500 hover:bg-green-500/10 transition-colors text-lg"
+                      >
                         <Link href="/Settings" className="flex items-center gap-1">
                           <SettingsIcon className="w-4 h-4" />
                           <span className="hidden lg:inline">Settings</span>
@@ -123,9 +147,7 @@ export default function RootLayout({
                 </div>
               </div>
             </header>
-            <main className="flex-1">
-              {children}
-            </main>
+            <main className="flex-1">{children}</main>
           </div>
         </ThemeProvider>
       </body>

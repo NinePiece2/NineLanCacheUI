@@ -1,21 +1,18 @@
 FROM node:24-alpine AS build
 
-ARG SYNCFUSION_LICENSE
 ARG VERSION=dev
-ENV SYNCFUSION_LICENSE=${SYNCFUSION_LICENSE}
 ENV NEXT_PUBLIC_VERSION=${VERSION}
 ENV NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
-RUN npx syncfusion-license activate
-RUN export SYNCFUSION_LICENSE=""
 
 RUN npm run build
+RUN npm prune --omit=dev 
 
 FROM node:24-alpine AS deploy
 

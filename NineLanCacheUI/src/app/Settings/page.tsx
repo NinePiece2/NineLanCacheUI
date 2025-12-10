@@ -12,7 +12,6 @@ import {
 import { Input } from "@/components/ui/input";
 
 function isValidIp(ip: string) {
-  // Basic IPv4 regex validation
   return /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/.test(ip);
 }
 
@@ -38,7 +37,6 @@ export default function SettingsPage() {
   const [selectedInterface, setSelectedInterface] = useState("");
   const [interfaceOptions, setInterfaceOptions] = useState<string[]>([]);
   const [interfaceLoading, setInterfaceLoading] = useState(true);
-
 
   useEffect(() => {
     async function fetchIps() {
@@ -101,7 +99,7 @@ export default function SettingsPage() {
         setError("Failed to delete IP.");
       }
     } catch {
-        setError("Failed to delete IP.");
+      setError("Failed to delete IP.");
     }
   };
 
@@ -112,7 +110,7 @@ export default function SettingsPage() {
 
         const [interfacesRes, selectedRes] = await Promise.all([
           fetch("/api/proxy/Network/GetNetworkInterfaces"),
-          fetch("/api/proxy/Settings/GetNetworkGraphInterface")
+          fetch("/api/proxy/Settings/GetNetworkGraphInterface"),
         ]);
 
         const ifaceList = await interfacesRes.json();
@@ -131,7 +129,6 @@ export default function SettingsPage() {
     fetchInterfacesAndSetting();
   }, []);
 
-
   return (
     <AnimatedPage>
       <div
@@ -147,9 +144,7 @@ export default function SettingsPage() {
             {loading ? (
               <p className="text-foreground">Loading...</p>
             ) : (
-              <ul
-                className="max-h-60 overflow-y-auto rounded-md p-3 bg-card border border-border"
-              >
+              <ul className="max-h-60 overflow-y-auto rounded-md p-3 bg-card border border-border">
                 {excludedIps.length === 0 && (
                   <li className="text-muted-foreground italic">No excluded IP addresses yet.</li>
                 )}
@@ -236,44 +231,43 @@ export default function SettingsPage() {
               <p className="text-foreground">Loading interfaces...</p>
             ) : (
               <div className="flex justify-center">
-              <Select
-                value={selectedInterface}
-                onValueChange={async (val) => {
-                  const newInterface = val;
-                  setSelectedInterface(newInterface);
+                <Select
+                  value={selectedInterface}
+                  onValueChange={async (val) => {
+                    const newInterface = val;
+                    setSelectedInterface(newInterface);
 
-                  try {
-                    const res = await fetch("/api/proxy/Settings/SetNetworkGraphInterface", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ interface: newInterface })
-                    });
+                    try {
+                      const res = await fetch("/api/proxy/Settings/SetNetworkGraphInterface", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ interface: newInterface }),
+                      });
 
-                    if (!res.ok) {
-                      const err = await res.json();
-                      setError(err.message || "Failed to update network interface.");
+                      if (!res.ok) {
+                        const err = await res.json();
+                        setError(err.message || "Failed to update network interface.");
+                      }
+                    } catch {
+                      setError("Failed to update network interface.");
                     }
-                  } catch {
-                    setError("Failed to update network interface.");
-                  }
-                }}
-              >
-                <SelectTrigger className="text-foreground px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition bg-secondary mx-auto">
-                  <SelectValue placeholder="Select interface" />
-                </SelectTrigger>
-                <SelectContent>
-                  {interfaceOptions.map((iface) => (
-                    <SelectItem key={iface} value={iface}>
-                      {iface}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                  }}
+                >
+                  <SelectTrigger className="text-foreground px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition bg-secondary mx-auto">
+                    <SelectValue placeholder="Select interface" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {interfaceOptions.map((iface) => (
+                      <SelectItem key={iface} value={iface}>
+                        {iface}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </section>
         </AnimatedCard>
-
       </div>
     </AnimatedPage>
   );

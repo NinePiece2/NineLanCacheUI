@@ -3,7 +3,14 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import NextImage from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { formatBytes } from "../../../lib/Utilities";
 import { getSignalRConnection, startConnection } from "../../../lib/SignalR";
@@ -59,23 +66,23 @@ function setStoredFilters(filters: Filters) {
 const PreloadableImage = ({ appId }: { appId: number }) => {
   const imageUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
   const fallbackUrl = "https://steamdb.info/static/img/applogo.svg";
-  
+
   const [currentSrc, setCurrentSrc] = useState(imageUrl);
   const hasErrored = useRef(false);
 
   const handleError = () => {
-    console.log('Image error for appId:', appId, 'hasErrored:', hasErrored.current);
+    console.log("Image error for appId:", appId, "hasErrored:", hasErrored.current);
     if (!hasErrored.current) {
       hasErrored.current = true;
       setCurrentSrc(fallbackUrl);
-      console.log('Switched to fallback for appId:', appId);
-      imageCache.setStatus(imageUrl, 'missing');
+      console.log("Switched to fallback for appId:", appId);
+      imageCache.setStatus(imageUrl, "missing");
     }
   };
 
   const handleLoad = () => {
     if (currentSrc === imageUrl) {
-      imageCache.setStatus(imageUrl, 'exists');
+      imageCache.setStatus(imageUrl, "exists");
     }
   };
 
@@ -90,7 +97,12 @@ const PreloadableImage = ({ appId }: { appId: number }) => {
             height={69}
             className="object-cover rounded shadow bg-muted"
           >
-            <div className="flex items-center justify-center" style={{width: '184px', height: '69px'}}>Steam App</div>
+            <div
+              className="flex items-center justify-center"
+              style={{ width: "184px", height: "69px" }}
+            >
+              Steam App
+            </div>
           </object>
         ) : (
           <NextImage
@@ -110,31 +122,30 @@ const PreloadableImage = ({ appId }: { appId: number }) => {
   );
 };
 
-
-
 export default function RecentSteamDownloads() {
   const [data, setData] = useState<DownloadEvent[]>([]);
-  const [selectedRange, setSelectedRange] = useState(() => getStoredFilters()?.selectedRange || "0");
+  const [selectedRange, setSelectedRange] = useState(
+    () => getStoredFilters()?.selectedRange || "0",
+  );
   const [customDays, setCustomDays] = useState(() => getStoredFilters()?.customDays || "");
   const [excludeIPs, setExcludeIPs] = useState(() => getStoredFilters()?.excludeIPs ?? true);
   const [filterText, setFilterText] = useState("");
   const [sortField, setSortField] = useState<keyof DownloadEvent | null>(null);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   useEffect(() => {
-      setStoredFilters({ selectedRange, customDays, excludeIPs });
+    setStoredFilters({ selectedRange, customDays, excludeIPs });
   }, [selectedRange, customDays, excludeIPs]);
 
-  const days =
-    selectedRange === "custom" ? parseInt(customDays) || 0 : parseInt(selectedRange);
+  const days = selectedRange === "custom" ? parseInt(customDays) || 0 : parseInt(selectedRange);
 
-  const filteredData = data.filter(item => {
+  const filteredData = data.filter((item) => {
     if (!filterText) return true;
     const searchLower = filterText.toLowerCase();
     return (
       item.clientIp.toLowerCase().includes(searchLower) ||
-      (item.steamDepot?.steamApp?.name || '').toLowerCase().includes(searchLower) ||
-      (item.downloadIdentifier?.toString() || '').includes(searchLower)
+      (item.steamDepot?.steamApp?.name || "").toLowerCase().includes(searchLower) ||
+      (item.downloadIdentifier?.toString() || "").includes(searchLower)
     );
   });
 
@@ -142,7 +153,7 @@ export default function RecentSteamDownloads() {
     if (sortField) {
       const aVal = a[sortField];
       const bVal = b[sortField];
-      const modifier = sortDirection === 'asc' ? 1 : -1;
+      const modifier = sortDirection === "asc" ? 1 : -1;
       if (aVal && bVal) {
         return aVal > bVal ? modifier : aVal < bVal ? -modifier : 0;
       }
@@ -152,10 +163,10 @@ export default function RecentSteamDownloads() {
 
   const handleSort = (field: keyof DownloadEvent) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
@@ -166,21 +177,22 @@ export default function RecentSteamDownloads() {
       params.append("excludeIPs", excludeIPs.toString());
       params.append("limit", "100");
 
-      const res = await fetch(`/api/proxy/RecentDownloads/GetRecentSteamDownloads?${params.toString()}`);
+      const res = await fetch(
+        `/api/proxy/RecentDownloads/GetRecentSteamDownloads?${params.toString()}`,
+      );
       if (!res.ok) throw new Error("Failed to fetch data");
 
       const newData: DownloadEvent[] = await res.json();
-      
-      setData(prevData => {
+
+      setData((prevData) => {
         const dataMap = new Map<number, DownloadEvent>();
-        prevData.forEach(item => dataMap.set(item.id, item));
-        newData.forEach(item => dataMap.set(item.id, item));
-        
+        prevData.forEach((item) => dataMap.set(item.id, item));
+        newData.forEach((item) => dataMap.set(item.id, item));
+
         return Array.from(dataMap.values())
           .sort((a, b) => new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime())
           .slice(0, 100);
       });
-
     } catch (error) {
       console.error(error);
     }
@@ -193,21 +205,22 @@ export default function RecentSteamDownloads() {
       params.append("excludeIPs", excludeIPs.toString());
       params.append("limit", "20");
 
-      const res = await fetch(`/api/proxy/RecentDownloads/GetRecentSteamDownloads?${params.toString()}`);
+      const res = await fetch(
+        `/api/proxy/RecentDownloads/GetRecentSteamDownloads?${params.toString()}`,
+      );
       if (!res.ok) throw new Error("Failed to fetch new data");
 
       const newData: DownloadEvent[] = await res.json();
 
-      setData(prevData => {
+      setData((prevData) => {
         const dataMap = new Map<number, DownloadEvent>();
-        prevData.forEach(item => dataMap.set(item.id, item));
-        newData.forEach(item => dataMap.set(item.id, item));
-        
+        prevData.forEach((item) => dataMap.set(item.id, item));
+        newData.forEach((item) => dataMap.set(item.id, item));
+
         return Array.from(dataMap.values())
           .sort((a, b) => new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime())
           .slice(0, 100);
       });
-
     } catch (error) {
       console.error("Failed to fetch and merge new data", error);
     }
@@ -233,11 +246,15 @@ export default function RecentSteamDownloads() {
     };
   }, [fetchAndMergeNewData]);
 
-
   return (
     <AnimatedPage>
-      <div className="p-4 mx-auto rounded-3xl bg-background" style={{ width: "98%", maxWidth: "1600px" }}>
-        <h1 className="text-3xl font-bold mb-4 text-center text-foreground">Recent Steam Downloads</h1>
+      <div
+        className="p-4 mx-auto rounded-3xl bg-background"
+        style={{ width: "98%", maxWidth: "1600px" }}
+      >
+        <h1 className="text-3xl font-bold mb-4 text-center text-foreground">
+          Recent Steam Downloads
+        </h1>
 
         <DateRangeFilter
           selectedRange={selectedRange}
@@ -267,13 +284,21 @@ export default function RecentSteamDownloads() {
                 <Table>
                   <TableHeader>
                     <TableRow className="border-border hover:bg-transparent">
-                      <TableHead className="text-foreground cursor-pointer hover:text-muted-foreground" onClick={() => handleSort('createdAt')}>
-                        Timestamp {sortField === 'createdAt' && (sortDirection === 'asc' ? '↑' : '↓')}
+                      <TableHead
+                        className="text-foreground cursor-pointer hover:text-muted-foreground"
+                        onClick={() => handleSort("createdAt")}
+                      >
+                        Timestamp{" "}
+                        {sortField === "createdAt" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
                       <TableHead className="text-foreground">App</TableHead>
                       <TableHead className="text-foreground">Depot</TableHead>
-                      <TableHead className="text-foreground cursor-pointer hover:text-muted-foreground" onClick={() => handleSort('clientIp')}>
-                        Client IP {sortField === 'clientIp' && (sortDirection === 'asc' ? '↑' : '↓')}
+                      <TableHead
+                        className="text-foreground cursor-pointer hover:text-muted-foreground"
+                        onClick={() => handleSort("clientIp")}
+                      >
+                        Client IP{" "}
+                        {sortField === "clientIp" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
                       <TableHead className="text-foreground">Hit %</TableHead>
                       <TableHead className="text-foreground">Miss %</TableHead>
@@ -292,12 +317,15 @@ export default function RecentSteamDownloads() {
                       const appId = row.steamDepot?.steamAppId;
                       const totalBytes = row.totalBytes ?? 0;
                       const downloaded = (row.cacheMissBytes ?? 0) + (row.cacheHitBytes ?? 0);
-                      const downloadPercent = totalBytes > 0 ? Math.min((downloaded / totalBytes) * 100, 100) : 0;
-                      
+                      const downloadPercent =
+                        totalBytes > 0 ? Math.min((downloaded / totalBytes) * 100, 100) : 0;
+
                       return (
                         <TableRow key={row.id} className="border-border hover:bg-secondary">
                           <TableCell className="text-foreground text-sm whitespace-nowrap">
-                            <div>{formatDateTime(created)} → {formatDateTime(updated)}</div>
+                            <div>
+                              {formatDateTime(created)} → {formatDateTime(updated)}
+                            </div>
                           </TableCell>
                           <TableCell>
                             {row.cacheIdentifier === "steam" && appId ? (
@@ -326,7 +354,10 @@ export default function RecentSteamDownloads() {
                           <TableCell>
                             <div className="w-full min-w-[120px]">
                               <div className="h-4 bg-muted rounded overflow-hidden">
-                                <div className="h-full bg-green-500" style={{ width: `${hitPercent}%` }}></div>
+                                <div
+                                  className="h-full bg-green-500"
+                                  style={{ width: `${hitPercent}%` }}
+                                ></div>
                               </div>
                               <div className="text-xs mt-1 text-foreground text-center">
                                 {formatBytes(row.cacheHitBytes)} • {hitPercent.toFixed(1)}%
@@ -336,7 +367,10 @@ export default function RecentSteamDownloads() {
                           <TableCell>
                             <div className="w-full min-w-[120px]">
                               <div className="h-4 bg-muted rounded overflow-hidden">
-                                <div className="h-full bg-red-500" style={{ width: `${missPercent}%` }}></div>
+                                <div
+                                  className="h-full bg-red-500"
+                                  style={{ width: `${missPercent}%` }}
+                                ></div>
                               </div>
                               <div className="text-xs mt-1 text-foreground text-center">
                                 {formatBytes(row.cacheMissBytes)} • {missPercent.toFixed(1)}%
@@ -346,11 +380,16 @@ export default function RecentSteamDownloads() {
                           <TableCell>
                             <div className="w-full min-w-[150px]">
                               {totalBytes === 0 ? (
-                                <span className="text-red-400 text-sm">Could not find Steam Manifest</span>
+                                <span className="text-red-400 text-sm">
+                                  Could not find Steam Manifest
+                                </span>
                               ) : (
                                 <>
                                   <div className="h-4 bg-muted rounded overflow-hidden">
-                                    <div className="h-full bg-indigo-500" style={{ width: `${downloadPercent}%` }}></div>
+                                    <div
+                                      className="h-full bg-indigo-500"
+                                      style={{ width: `${downloadPercent}%` }}
+                                    ></div>
                                   </div>
                                   <div className="text-xs mt-1 text-foreground text-center">
                                     {downloadPercent < 100

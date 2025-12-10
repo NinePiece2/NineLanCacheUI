@@ -1,13 +1,24 @@
-'use client';
+"use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+  Legend,
+  Tooltip,
+} from "recharts";
 import { formatBytes, chartPalette, formatBits } from "../../lib/Utilities";
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from "react";
 import { getSignalRConnection, startConnection } from "../../lib/SignalR";
 import { AnimatedPage, AnimatedCard } from "@/components/animations";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
 
-// Local types for Recharts tooltip/label payloads to avoid `any`
 type PieTooltipItem = {
   payload?: { x?: string; y?: number } | undefined;
   name?: string | undefined;
@@ -57,7 +68,6 @@ function smoothData(rawData: { x: Date; y: number }[], alpha = 0.2): { x: Date; 
   return smoothed;
 }
 
-
 function clampSpike(data: { x: Date; y: number }[], factor = 4) {
   return data.map((point, i, arr) => {
     if (i === 0) return point;
@@ -65,7 +75,7 @@ function clampSpike(data: { x: Date; y: number }[], factor = 4) {
     const maxAllowed = Math.max(prev * factor, prev + 10_000_000);
     return {
       ...point,
-      y: Math.min(point.y, maxAllowed)
+      y: Math.min(point.y, maxAllowed),
     };
   });
 }
@@ -81,35 +91,39 @@ function deduplicateTimestamps(data: { x: Date; y: number }[]): { x: Date; y: nu
 }
 
 function preprocessGraph(raw: { x: Date; y: number }[]): { x: Date; y: number }[] {
-    return clampSpike(deduplicateTimestamps(smoothData(raw, 0.1)));
+  const sorted = [...raw].sort((a, b) => a.x.getTime() - b.x.getTime());
+  const deduped = deduplicateTimestamps(sorted);
+  const smoothed = smoothData(deduped, 0.1);
+  const clamped = clampSpike(smoothed);
+  return clamped;
 }
 
 export default function Home() {
   const [hitMissData, setHitMissData] = useState([
-    { x: 'Hit Bytes', y: 0 },
-    { x: 'Miss Bytes', y: 0 },
+    { x: "Hit Bytes", y: 0 },
+    { x: "Miss Bytes", y: 0 },
   ]);
 
   const [serviceSplitData, setServiceSplitData] = useState<{ x: string; y: number }[]>([]);
   const [missBytesByService, setMissBytesByService] = useState<{ x: string; y: number }[]>([]);
   const [hitBytesByService, setHitBytesByService] = useState<{ x: string; y: number }[]>([]);
-  const [selectedRange, setSelectedRange] = useState(() => getStoredFilters()?.selectedRange || "0");
+  const [selectedRange, setSelectedRange] = useState(
+    () => getStoredFilters()?.selectedRange || "0",
+  );
   const [customDays, setCustomDays] = useState(() => getStoredFilters()?.customDays || "");
   const [excludeIPs, setExcludeIPs] = useState(() => getStoredFilters()?.excludeIPs ?? true);
 
   const [uploadSeries, setUploadSeries] = useState<{ x: Date; y: number }[]>([]);
 
-  // Compute a sensible tick interval for the X axis so ticks align with grid markers
-  const xTickInterval = uploadSeries && uploadSeries.length > 7 ? Math.ceil(uploadSeries.length / 7) : 0;
-
+  const xTickInterval =
+    uploadSeries && uploadSeries.length > 7 ? Math.ceil(uploadSeries.length / 7) : 0;
 
   useEffect(() => {
     setStoredFilters({ selectedRange, customDays, excludeIPs });
   }, [selectedRange, customDays, excludeIPs]);
 
-  // Compute effective days param
   const daysToUse =
-    selectedRange === 'custom'
+    selectedRange === "custom"
       ? customDays && Number(customDays) > 0
         ? Number(customDays)
         : 30
@@ -140,8 +154,8 @@ export default function Home() {
 
       const hitMiss = await hitMissRes.json();
       setHitMissData([
-        { x: 'Hit Bytes', y: hitMiss.totalHitBytes },
-        { x: 'Miss Bytes', y: hitMiss.totalMissBytes },
+        { x: "Hit Bytes", y: hitMiss.totalHitBytes },
+        { x: "Miss Bytes", y: hitMiss.totalMissBytes },
       ]);
 
       const service = await serviceRes.json();
@@ -152,7 +166,6 @@ export default function Home() {
 
       const hit = await hitRes.json();
       setHitBytesByService(hit.map((s: ServiceData) => ({ x: s.service, y: s.totalBytes })));
-
     } catch (err) {
       console.error("Failed to fetch data:", err);
     }
@@ -162,31 +175,31 @@ export default function Home() {
     fetchAll();
   }, [debouncedDays, excludeIPs, fetchAll]);
 
-   useEffect(() => {
-      const connection = getSignalRConnection();
-  
-      const handler = () => {
-        fetchAll();
-      };
-  
-      connection.on("UpdateDownloadEvents", handler);
-      startConnection();
-  
-      return () => {
-        connection.off("UpdateDownloadEvents", handler);
-      };
-    }, [fetchAll]);
+  useEffect(() => {
+    const connection = getSignalRConnection();
 
-  const COLORS = ['#4CAF50', '#ff3131ff'];
-  
+    const handler = () => {
+      fetchAll();
+    };
+
+    connection.on("UpdateDownloadEvents", handler);
+    startConnection();
+
+    return () => {
+      connection.off("UpdateDownloadEvents", handler);
+    };
+  }, [fetchAll]);
+
+  const COLORS = ["#4CAF50", "#ff3131ff"];
+
   const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: PieTooltipItem[] }) => {
     if (active && payload && payload.length) {
       const data = payload[0];
       const value = data.payload?.y ?? data.value ?? 0;
       return (
-          <div className="bg-card p-2 rounded border border-border">
-            <p className="text-foreground font-['Poppins'] text-sm">
-            {`${data.payload?.x || data.name || 'Unknown'}: ${formatBytes(value)}`}
+        <div className="bg-card p-2 rounded border border-border">
+          <p className="text-foreground font-['Poppins'] text-sm">
+            {`${data.payload?.x || data.name || "Unknown"}: ${formatBytes(value)}`}
           </p>
         </div>
       );
@@ -214,7 +227,7 @@ export default function Home() {
 
         setUploadSeries(preprocessGraph(rawPoints));
       } catch (err) {
-        console.error('Initial graph fetch failed:', err);
+        console.error("Initial graph fetch failed:", err);
       }
     };
 
@@ -241,14 +254,26 @@ export default function Home() {
             y: data.bytesSentPerSec,
           };
 
-          setUploadSeries(prevSeries => {
+          setUploadSeries((prevSeries) => {
             const thirtyMinAgo = new Date(newRawPoint.x.getTime() - 30 * 60 * 1000);
-            const filteredRaw = [...prevSeries.filter(p => p.x > thirtyMinAgo), newRawPoint];
-            return preprocessGraph(filteredRaw);
+            const filtered = prevSeries.filter((p) => p.x > thirtyMinAgo);
+
+            // Apply smoothing to the new point only
+            let smoothedY = newRawPoint.y;
+            if (filtered.length > 0) {
+              const lastY = filtered[filtered.length - 1].y;
+              smoothedY = 0.1 * newRawPoint.y + (1 - 0.1) * lastY;
+
+              // Clamp spike
+              const maxAllowed = Math.max(lastY * 4, lastY + 10_000_000);
+              smoothedY = Math.min(smoothedY, maxAllowed);
+            }
+
+            return [...filtered, { x: newRawPoint.x, y: smoothedY }];
           });
         }
       } catch (err) {
-        console.error('Polling failed:', err);
+        console.error("Polling failed:", err);
       }
     }, 1000);
 
@@ -265,7 +290,9 @@ export default function Home() {
         <AnimatedCard delay={0.1}>
           <Card className="w-full bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-lg font-semibold text-center text-foreground">Cache Hit vs Miss (Bytes)</CardTitle>
+              <CardTitle className="text-lg font-semibold text-center text-foreground">
+                Cache Hit vs Miss (Bytes)
+              </CardTitle>
             </CardHeader>
             <CardContent className="h-64">
               {hitMissData[0].y > 0 && (
@@ -285,14 +312,14 @@ export default function Home() {
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
-                          <Legend 
-                            wrapperStyle={{ 
-                              fontFamily: 'Poppins, sans-serif',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              color: 'var(--foreground)'
-                            }} 
-                          />
+                    {/* <Legend
+                      wrapperStyle={{
+                        fontFamily: "Poppins, sans-serif",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "var(--foreground)",
+                      }}
+                    /> */}
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -303,7 +330,9 @@ export default function Home() {
         <AnimatedCard delay={0.2}>
           <Card className="w-full bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-lg font-semibold text-center text-foreground">Download Requests by Service</CardTitle>
+              <CardTitle className="text-lg font-semibold text-center text-foreground">
+                Download Requests by Service
+              </CardTitle>
             </CardHeader>
             <CardContent className="h-64">
               {serviceSplitData.length > 0 && (
@@ -319,17 +348,20 @@ export default function Home() {
                       label={renderLabel}
                     >
                       {serviceSplitData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={chartPalette[index % chartPalette.length]} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={chartPalette[index % chartPalette.length]}
+                        />
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
-                    <Legend 
-                      wrapperStyle={{ 
-                        fontFamily: 'Poppins, sans-serif',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: 'var(--foreground)'
-                      }} 
+                    <Legend
+                      wrapperStyle={{
+                        fontFamily: "Poppins, sans-serif",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        color: "var(--foreground)",
+                      }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -341,7 +373,9 @@ export default function Home() {
         <AnimatedCard delay={0.3}>
           <Card className="w-full bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-lg font-semibold text-center text-foreground">Miss Bytes by Service</CardTitle>
+              <CardTitle className="text-lg font-semibold text-center text-foreground">
+                Miss Bytes by Service
+              </CardTitle>
             </CardHeader>
             <CardContent className="h-64">
               {missBytesByService.length > 0 && (
@@ -357,17 +391,20 @@ export default function Home() {
                       label={renderLabel}
                     >
                       {missBytesByService.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={chartPalette[index % chartPalette.length]} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={chartPalette[index % chartPalette.length]}
+                        />
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
-                    <Legend 
-                      wrapperStyle={{ 
-                        fontFamily: 'Poppins, sans-serif',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: 'var(--foreground)'
-                      }} 
+                    <Legend
+                      wrapperStyle={{
+                        fontFamily: "Poppins, sans-serif",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        color: "var(--foreground)",
+                      }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -379,7 +416,9 @@ export default function Home() {
         <AnimatedCard delay={0.4}>
           <Card className="w-full bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-lg font-semibold text-center text-foreground">Hit Bytes by Service</CardTitle>
+              <CardTitle className="text-lg font-semibold text-center text-foreground">
+                Hit Bytes by Service
+              </CardTitle>
             </CardHeader>
             <CardContent className="h-64">
               {hitBytesByService.length > 0 && (
@@ -395,17 +434,20 @@ export default function Home() {
                       label={renderLabel}
                     >
                       {hitBytesByService.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={chartPalette[index % chartPalette.length]} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={chartPalette[index % chartPalette.length]}
+                        />
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
-                    <Legend 
-                      wrapperStyle={{ 
-                        fontFamily: 'Poppins, sans-serif',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: 'var(--foreground)'
-                      }} 
+                    <Legend
+                      wrapperStyle={{
+                        fontFamily: "Poppins, sans-serif",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        color: "var(--foreground)",
+                      }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -424,38 +466,52 @@ export default function Home() {
         delay={0.5}
       />
       <AnimatedCard delay={0.6}>
-        <div className="w-full mt-6 px-6 max-w-[98%] mx-auto" style={{ marginBottom: '2rem' }}>
+        <div className="w-full mt-6 px-6 max-w-[98%] mx-auto" style={{ marginBottom: "2rem" }}>
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-lg font-semibold text-foreground">Cache Usage Speed</CardTitle>
+              <CardTitle className="text-lg font-semibold text-foreground">
+                Cache Usage Speed
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {uploadSeries.length > 0 && (
                 <div className="w-full h-80">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={uploadSeries} style={{ fontFamily: 'Poppins, sans-serif' }}>
+                    <LineChart
+                      data={uploadSeries}
+                      style={{ fontFamily: "Poppins, sans-serif" }}
+                      margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+                    >
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                       <XAxis
                         dataKey="x"
-                        tickFormatter={(value) => new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        tickFormatter={(value) =>
+                          new Date(value).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        }
                         stroke="var(--foreground)"
-                        style={{ fontFamily: 'Poppins', fontSize: '12px' }}
+                        style={{ fontFamily: "Poppins", fontSize: "12px" }}
                         tick={{ fontSize: 12 }}
                         interval={xTickInterval}
                       />
-                      <YAxis 
-                        tickFormatter={(value) => formatBits(value) + '/s'}
+                      <YAxis
+                        tickFormatter={(value) => formatBits(value) + "/s"}
                         stroke="var(--foreground)"
-                        style={{ fontFamily: 'Poppins', fontSize: '12px' }}
+                        style={{ fontFamily: "Poppins", fontSize: "12px" }}
                       />
-                      <Tooltip 
+                      <Tooltip
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
                             const data = payload[0];
-                              return (
+                            return (
                               <div className="bg-card p-2 rounded border border-border">
                                 <p className="text-foreground font-['Poppins'] text-sm">
-                                  {new Date(data.payload.x).toLocaleTimeString([], { hour12: false })} : {formatBits(data.value as number)}/s
+                                  {new Date(data.payload.x).toLocaleTimeString([], {
+                                    hour12: false,
+                                  })}{" "}
+                                  : {formatBits(data.value as number)}/s
                                 </p>
                               </div>
                             );
@@ -463,11 +519,11 @@ export default function Home() {
                           return null;
                         }}
                       />
-                      <Line 
-                        type="monotone" 
-                        dataKey="y" 
+                      <Line
+                        type="monotone"
+                        dataKey="y"
                         stroke="var(--color-green-500)"
-                        strokeWidth={3}
+                        strokeWidth={2}
                         dot={false}
                         name="Usage Speed"
                         isAnimationActive={false}
