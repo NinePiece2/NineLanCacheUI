@@ -101,10 +101,7 @@ export function ScaleIn({
   );
 }
 
-export function StaggerContainer({
-  children,
-  className = "",
-}: AnimatedPageProps) {
+export function StaggerContainer({ children, className = "" }: AnimatedPageProps) {
   return (
     <motion.div
       initial="hidden"

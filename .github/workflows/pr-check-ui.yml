@@ -30,3 +30,6 @@ jobs:
         env:
             CI: false
         run: npm run build
+
+      - name: Build Docker image
+        run: docker build -t ninelanecacheui:test .

@@ -1,15 +1,22 @@
-'use client';
+"use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import { formatBytes, chartPalette } from "../../../lib/Utilities";
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from "react";
 import { getSignalRConnection, startConnection } from "../../../lib/SignalR";
 import { AnimatedPage, AnimatedCard } from "@/components/animations";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
 
-// Local types for Recharts tooltip/label payloads to avoid `any`
 type PieTooltipItem = {
   payload?: { x?: string; y?: number } | undefined;
   name?: string | undefined;
@@ -52,21 +59,24 @@ function setStoredFilters(filters: Filters) {
 export default function Stats() {
   const [missBytesByClient, setMissBytesByClient] = useState<{ x: string; y: number }[]>([]);
   const [hitBytesByClient, setHitBytesByClient] = useState<{ x: string; y: number }[]>([]);
-  const [selectedRange, setSelectedRange] = useState(() => getStoredFilters()?.selectedRange || "0");
+  const [selectedRange, setSelectedRange] = useState(
+    () => getStoredFilters()?.selectedRange || "0",
+  );
   const [customDays, setCustomDays] = useState(() => getStoredFilters()?.customDays || "");
   const [excludeIPs, setExcludeIPs] = useState(() => getStoredFilters()?.excludeIPs ?? true);
   const [hitMissGridData, setHitMissGridData] = useState<HitMissData[]>([]);
   const [filterText, setFilterText] = useState("");
   const [sortField, setSortField] = useState<keyof HitMissData | null>(null);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
 
   useEffect(() => {
     setStoredFilters({ selectedRange, customDays, excludeIPs });
   }, [selectedRange, customDays, excludeIPs]);
 
-  // Compute effective days param
   const daysToUse =
-    selectedRange === 'custom'
+    selectedRange === "custom"
       ? customDays && Number(customDays) > 0
         ? Number(customDays)
         : 30
@@ -91,7 +101,7 @@ export default function Stats() {
       const [hitMissRes, clientHits, clientMisses] = await Promise.all([
         fetch(`${base}/GetClientHitMissGrid${qs}`),
         fetch(`${base}/GetClientHits${qs}`),
-        fetch(`${base}/GetClientMisses${qs}`)
+        fetch(`${base}/GetClientMisses${qs}`),
       ]);
 
       const hitMissGrid = await hitMissRes.json();
@@ -106,7 +116,6 @@ export default function Stats() {
       console.error("Failed to fetch data:", err);
     }
   }, [debouncedDays, excludeIPs]);
-
 
   useEffect(() => {
     fetchAll();
@@ -134,7 +143,7 @@ export default function Stats() {
       return (
         <div className="bg-card p-2 rounded border border-border">
           <p className="text-foreground font-['Poppins'] text-sm">
-            {`${data.payload?.x || data.name || 'Unknown'}: ${formatBytes(value)}`}
+            {`${data.payload?.x || data.name || "Unknown"}: ${formatBytes(value)}`}
           </p>
         </div>
       );
@@ -146,37 +155,50 @@ export default function Stats() {
     return `${entry.name || entry.x}: ${formatBytes(entry.value ?? entry.y ?? 0)}`;
   };
 
-  const filteredData = hitMissGridData.filter(item => 
-    !filterText || item.ipAddress.toLowerCase().includes(filterText.toLowerCase())
+  const filteredData = hitMissGridData.filter(
+    (item) => !filterText || item.ipAddress.toLowerCase().includes(filterText.toLowerCase()),
   );
 
   const sortedData = [...filteredData].sort((a, b) => {
     if (!sortField) return 0;
     const aVal = a[sortField];
     const bVal = b[sortField];
-    const modifier = sortDirection === 'asc' ? 1 : -1;
+    const modifier = sortDirection === "asc" ? 1 : -1;
     return aVal > bVal ? modifier : aVal < bVal ? -modifier : 0;
   });
 
+  // Pagination logic
+  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
+  const startIdx = (currentPage - 1) * itemsPerPage;
+  const paginatedData = sortedData.slice(startIdx, startIdx + itemsPerPage);
+
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterText]);
+
   const handleSort = (field: keyof HitMissData) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
   return (
     <AnimatedPage>
       <AnimatedCard delay={0.1}>
-        <div className="p-4 mx-auto rounded-3xl bg-background" style={{ width: "95%" }}>
-          <div className="flex flex-col p-4">
-            <div className="flex gap-4">
+        <div
+          className="p-4 mx-auto rounded-3xl bg-background h-[calc(100vh-200px)] flex flex-col"
+          style={{ width: "95%" }}
+        >
+          <div className="flex flex-col p-4 h-full gap-4">
+            <div className="flex gap-4 h-full">
               {/* Left side: Table */}
-              <div className="w-2/4">
-                <Card className="bg-card border-border">
-                  <CardHeader>
+              <div className="w-1/2 flex flex-col">
+                <Card className="bg-card border-border flex flex-col h-full">
+                  <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-foreground">Client Hit/Miss Stats</CardTitle>
                       <Input
@@ -187,53 +209,86 @@ export default function Stats() {
                       />
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="h-[50vh] overflow-y-auto">
+                  <CardContent className="flex flex-col flex-1 overflow-hidden pb-3">
+                    <div className="flex-1 overflow-y-auto">
                       <Table>
-                        <TableHeader>
+                        <TableHeader className="sticky top-0 bg-card z-10">
                           <TableRow className="border-border hover:bg-transparent">
-                              <TableHead 
-                                className="text-foreground cursor-pointer hover:text-muted-foreground"
-                              onClick={() => handleSort('ipAddress')}
-                            >
-                              Client IPs {sortField === 'ipAddress' && (sortDirection === 'asc' ? '↑' : '↓')}
-                            </TableHead>
-                            <TableHead 
+                            <TableHead
                               className="text-foreground cursor-pointer hover:text-muted-foreground"
-                              onClick={() => handleSort('totalHits')}
+                              onClick={() => handleSort("ipAddress")}
                             >
-                              Hit Bytes {sortField === 'totalHits' && (sortDirection === 'asc' ? '↑' : '↓')}
+                              Client IPs{" "}
+                              {sortField === "ipAddress" && (sortDirection === "asc" ? "↑" : "↓")}
                             </TableHead>
-                            <TableHead 
+                            <TableHead
                               className="text-foreground cursor-pointer hover:text-muted-foreground"
-                              onClick={() => handleSort('totalMisses')}
+                              onClick={() => handleSort("totalHits")}
                             >
-                              Miss Bytes {sortField === 'totalMisses' && (sortDirection === 'asc' ? '↑' : '↓')}
+                              Hit Bytes{" "}
+                              {sortField === "totalHits" && (sortDirection === "asc" ? "↑" : "↓")}
+                            </TableHead>
+                            <TableHead
+                              className="text-foreground cursor-pointer hover:text-muted-foreground"
+                              onClick={() => handleSort("totalMisses")}
+                            >
+                              Miss Bytes{" "}
+                              {sortField === "totalMisses" && (sortDirection === "asc" ? "↑" : "↓")}
                             </TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {sortedData.map((row, idx) => (
+                          {paginatedData.map((row, idx) => (
                             <TableRow key={idx} className="border-border hover:bg-secondary">
                               <TableCell className="text-foreground">{row.ipAddress}</TableCell>
-                              <TableCell className="text-foreground">{formatBytes(row.totalHits)}</TableCell>
-                              <TableCell className="text-foreground">{formatBytes(row.totalMisses)}</TableCell>
+                              <TableCell className="text-foreground">
+                                {formatBytes(row.totalHits)}
+                              </TableCell>
+                              <TableCell className="text-foreground">
+                                {formatBytes(row.totalMisses)}
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
                       </Table>
+                    </div>
+                    {/* Pagination Controls */}
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+                      <span className="text-sm text-muted-foreground">
+                        Page {currentPage} of {totalPages} ({sortedData.length} total)
+                      </span>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                          disabled={currentPage === 1}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Previous
+                        </Button>
+                        <Button
+                          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                          disabled={currentPage === totalPages}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Next
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
               {/* Right side: Two pie charts stacked vertically */}
-              <div className="w-2/4 flex flex-col gap-4">
-                <Card className="bg-card border-border">
-                  <CardHeader>
-                    <CardTitle className="text-center text-foreground font-semibold text-lg">Client Cache Hit</CardTitle>
+              <div className="w-1/2 flex flex-col gap-4 h-full">
+                <Card className="bg-card border-border flex flex-col flex-1">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-center text-foreground font-semibold text-lg">
+                      Client Cache Hit
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="h-60">
+                  <CardContent className="flex-1">
                     {hitBytesByClient.length > 0 && (
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
@@ -247,29 +302,34 @@ export default function Stats() {
                             label={renderLabel}
                           >
                             {hitBytesByClient.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={chartPalette[index % chartPalette.length]} />
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={chartPalette[index % chartPalette.length]}
+                              />
                             ))}
                           </Pie>
                           <Tooltip content={<CustomTooltip />} />
-                          <Legend 
-                            wrapperStyle={{ 
-                              fontFamily: 'Poppins, sans-serif',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              color: 'var(--foreground)'
-                            }} 
+                          <Legend
+                            wrapperStyle={{
+                              fontFamily: "Poppins, sans-serif",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                              color: "var(--foreground)",
+                            }}
                           />
                         </PieChart>
                       </ResponsiveContainer>
                     )}
                   </CardContent>
                 </Card>
-                
-                <Card className="bg-card border-border">
-                  <CardHeader>
-                    <CardTitle className="text-center text-foreground font-semibold text-lg">Client Cache Miss</CardTitle>
+
+                <Card className="bg-card border-border flex flex-col flex-1">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-center text-foreground font-semibold text-lg">
+                      Client Cache Miss
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="h-60">
+                  <CardContent className="flex-1">
                     {missBytesByClient.length > 0 && (
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
@@ -283,17 +343,20 @@ export default function Stats() {
                             label={renderLabel}
                           >
                             {missBytesByClient.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={chartPalette[index % chartPalette.length]} />
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={chartPalette[index % chartPalette.length]}
+                              />
                             ))}
                           </Pie>
                           <Tooltip content={<CustomTooltip />} />
-                          <Legend 
-                            wrapperStyle={{ 
-                              fontFamily: 'Poppins, sans-serif',
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              color: 'var(--foreground)'
-                            }} 
+                          <Legend
+                            wrapperStyle={{
+                              fontFamily: "Poppins, sans-serif",
+                              fontSize: "12px",
+                              fontWeight: "600",
+                              color: "var(--foreground)",
+                            }}
                           />
                         </PieChart>
                       </ResponsiveContainer>

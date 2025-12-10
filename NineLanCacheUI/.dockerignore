@@ -7,3 +7,4 @@ Dockerfile
 npm-debug.log
 .husky
 .vscode
+.github

@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md,css,scss,html,mdx}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md,css,scss,html,mdx}\""
   },
   "dependencies": {
     "@microsoft/signalr": "^10.0.0",
@@ -18,6 +20,7 @@
     "framer-motion": "^12.23.25",
     "lucide-react": "^0.556.0",
     "next": "16.0.10",
+    "prettier": "^3.7.4",
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "recharts": "^2.15.4",

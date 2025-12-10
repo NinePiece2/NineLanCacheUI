@@ -41,9 +41,7 @@ function getInitialTheme(storageKey: string, defaultTheme: Theme): Theme {
 
 function getSystemTheme(): "dark" | "light" {
   if (typeof window === "undefined") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 export function ThemeProvider({
@@ -52,12 +50,8 @@ export function ThemeProvider({
   storageKey = "ninelancache-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() =>
-    getInitialTheme(storageKey, defaultTheme),
-  );
-  const [systemTheme, setSystemTheme] = useState<"dark" | "light">(
-    getSystemTheme,
-  );
+  const [theme, setTheme] = useState<Theme>(() => getInitialTheme(storageKey, defaultTheme));
+  const [systemTheme, setSystemTheme] = useState<"dark" | "light">(getSystemTheme);
 
   const actualTheme = useMemo(() => {
     return theme === "system" ? systemTheme : (theme as "dark" | "light");
@@ -100,8 +94,7 @@ export function ThemeProvider({
 export const useTheme = () => {
   const context = useContext(ThemeProviderContext);
 
-  if (context === undefined)
-    throw new Error("useTheme must be used within a ThemeProvider");
+  if (context === undefined) throw new Error("useTheme must be used within a ThemeProvider");
 
   return context;
 };
