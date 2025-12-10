@@ -3,8 +3,8 @@ import { useEffect, useState, useRef } from "react";
 import NextImage from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getSignalRConnection, startConnection } from "../../../lib/SignalR";
-import { imageCache } from "../../../lib/ImageCache";
+import { getSignalRConnection, startConnection } from "@/lib/SignalR";
+import { imageCache } from "@/lib/ImageCache";
 import { AnimatedPage, AnimatedCard } from "@/components/animations";
 
 type Game = {

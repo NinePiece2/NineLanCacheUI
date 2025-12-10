@@ -11,9 +11,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
-import { formatBytes, chartPalette } from "../../../lib/Utilities";
+import { formatBytes, chartPalette } from "@/lib/Utilities";
 import React, { useEffect, useState, useCallback } from "react";
-import { getSignalRConnection, startConnection } from "../../../lib/SignalR";
+import { getSignalRConnection, startConnection } from "@/lib/SignalR";
 import { AnimatedPage, AnimatedCard } from "@/components/animations";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
 
@@ -215,21 +215,21 @@ export default function Stats() {
                         <TableHeader className="sticky top-0 bg-card z-10">
                           <TableRow className="border-border hover:bg-transparent">
                             <TableHead
-                              className="text-foreground cursor-pointer hover:text-muted-foreground"
+                              className="text-foreground cursor-pointer hover:text-muted-foreground text-center"
                               onClick={() => handleSort("ipAddress")}
                             >
                               Client IPs{" "}
                               {sortField === "ipAddress" && (sortDirection === "asc" ? "↑" : "↓")}
                             </TableHead>
                             <TableHead
-                              className="text-foreground cursor-pointer hover:text-muted-foreground"
+                              className="text-foreground cursor-pointer hover:text-muted-foreground text-center"
                               onClick={() => handleSort("totalHits")}
                             >
                               Hit Bytes{" "}
                               {sortField === "totalHits" && (sortDirection === "asc" ? "↑" : "↓")}
                             </TableHead>
                             <TableHead
-                              className="text-foreground cursor-pointer hover:text-muted-foreground"
+                              className="text-foreground cursor-pointer hover:text-muted-foreground text-center"
                               onClick={() => handleSort("totalMisses")}
                             >
                               Miss Bytes{" "}
@@ -298,8 +298,8 @@ export default function Stats() {
                             nameKey="x"
                             cx="50%"
                             cy="50%"
-                            outerRadius={70}
-                            label={renderLabel}
+                            outerRadius={110}
+                            // label={renderLabel}
                           >
                             {hitBytesByClient.map((entry, index) => (
                               <Cell
@@ -309,14 +309,14 @@ export default function Stats() {
                             ))}
                           </Pie>
                           <Tooltip content={<CustomTooltip />} />
-                          <Legend
+                          {/* <Legend
                             wrapperStyle={{
                               fontFamily: "Poppins, sans-serif",
                               fontSize: "12px",
                               fontWeight: "600",
                               color: "var(--foreground)",
                             }}
-                          />
+                          /> */}
                         </PieChart>
                       </ResponsiveContainer>
                     )}
@@ -339,8 +339,8 @@ export default function Stats() {
                             nameKey="x"
                             cx="50%"
                             cy="50%"
-                            outerRadius={70}
-                            label={renderLabel}
+                            outerRadius={110}
+                            // label={renderLabel}
                           >
                             {missBytesByClient.map((entry, index) => (
                               <Cell
@@ -350,14 +350,14 @@ export default function Stats() {
                             ))}
                           </Pie>
                           <Tooltip content={<CustomTooltip />} />
-                          <Legend
+                          {/* <Legend
                             wrapperStyle={{
                               fontFamily: "Poppins, sans-serif",
                               fontSize: "12px",
                               fontWeight: "600",
                               color: "var(--foreground)",
                             }}
-                          />
+                          /> */}
                         </PieChart>
                       </ResponsiveContainer>
                     )}

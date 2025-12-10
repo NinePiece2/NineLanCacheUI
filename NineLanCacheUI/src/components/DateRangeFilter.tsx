@@ -8,6 +8,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Ban, Check } from "lucide-react";
 
 interface DateRangeFilterProps {
   selectedRange: string;
@@ -71,15 +73,32 @@ export function DateRangeFilter({
           )}
         </div>
 
-        <button
-          className={`ml-auto px-5 py-2 rounded-md font-semibold transition-colors duration-300 ${
-            excludeIPs ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"
-          } text-white shadow-md whitespace-nowrap`}
+        <Button
+          className={`ml-auto px-5 py-2 rounded-md font-semibold transition-colors duration-300 flex items-center gap-2 ${
+            excludeIPs
+              ? "bg-red-600 hover:bg-red-700 text-white shadow-md"
+              : "bg-green-600 hover:bg-green-700 text-white shadow-md"
+          } whitespace-nowrap`}
           onClick={() => onExcludeIPsChange(!excludeIPs)}
           type="button"
+          title={
+            excludeIPs
+              ? "Currently excluding IPs. Click to include all IPs."
+              : "Currently including all IPs. Click to exclude IPs."
+          }
         >
-          {excludeIPs ? "Exclude IPs" : "Include All IPs"}
-        </button>
+          {excludeIPs ? (
+            <>
+              <Ban size={18} />
+              Excluding IPs
+            </>
+          ) : (
+            <>
+              <Check size={18} />
+              Including All IPs
+            </>
+          )}
+        </Button>
       </div>
     </AnimatedCard>
   );
