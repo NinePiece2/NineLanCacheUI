@@ -13,9 +13,9 @@ import {
   Legend,
   Tooltip,
 } from "recharts";
-import { formatBytes, chartPalette, formatBits } from "../../lib/Utilities";
+import { formatBytes, chartPalette, formatBits } from "@/lib/Utilities";
 import React, { useEffect, useState, useCallback } from "react";
-import { getSignalRConnection, startConnection } from "../../lib/SignalR";
+import { getSignalRConnection, startConnection } from "@/lib/SignalR";
 import { AnimatedPage, AnimatedCard } from "@/components/animations";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
 
@@ -304,7 +304,7 @@ export default function Home() {
                       nameKey="x"
                       cx="50%"
                       cy="50%"
-                      outerRadius={80}
+                      outerRadius={120}
                       label={renderLabel}
                     >
                       {hitMissData.map((entry, index) => (
@@ -344,7 +344,7 @@ export default function Home() {
                       nameKey="x"
                       cx="50%"
                       cy="50%"
-                      outerRadius={80}
+                      outerRadius={120}
                       label={renderLabel}
                     >
                       {serviceSplitData.map((entry, index) => (
@@ -355,14 +355,14 @@ export default function Home() {
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
-                    <Legend
+                    {/* <Legend
                       wrapperStyle={{
                         fontFamily: "Poppins, sans-serif",
                         fontSize: "14px",
                         fontWeight: "600",
                         color: "var(--foreground)",
                       }}
-                    />
+                    /> */}
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -387,7 +387,7 @@ export default function Home() {
                       nameKey="x"
                       cx="50%"
                       cy="50%"
-                      outerRadius={80}
+                      outerRadius={120}
                       label={renderLabel}
                     >
                       {missBytesByService.map((entry, index) => (
@@ -398,14 +398,14 @@ export default function Home() {
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
-                    <Legend
+                    {/* <Legend
                       wrapperStyle={{
                         fontFamily: "Poppins, sans-serif",
                         fontSize: "14px",
                         fontWeight: "600",
                         color: "var(--foreground)",
                       }}
-                    />
+                    /> */}
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -430,7 +430,7 @@ export default function Home() {
                       nameKey="x"
                       cx="50%"
                       cy="50%"
-                      outerRadius={80}
+                      outerRadius={120}
                       label={renderLabel}
                     >
                       {hitBytesByService.map((entry, index) => (
@@ -441,14 +441,14 @@ export default function Home() {
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
-                    <Legend
+                    {/* <Legend
                       wrapperStyle={{
                         fontFamily: "Poppins, sans-serif",
                         fontSize: "14px",
                         fontWeight: "600",
                         color: "var(--foreground)",
                       }}
-                    />
+                    /> */}
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -480,7 +480,7 @@ export default function Home() {
                     <LineChart
                       data={uploadSeries}
                       style={{ fontFamily: "Poppins, sans-serif" }}
-                      margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+                      margin={{ top: 5, right: 30, left: 60, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                       <XAxis

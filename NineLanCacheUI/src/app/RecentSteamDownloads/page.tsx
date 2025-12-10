@@ -12,9 +12,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { formatBytes } from "../../../lib/Utilities";
-import { getSignalRConnection, startConnection } from "../../../lib/SignalR";
-import { imageCache } from "../../../lib/ImageCache";
+import { formatBytes } from "@/lib/Utilities";
+import { getSignalRConnection, startConnection } from "../../lib/SignalR";
+import { imageCache } from "@/lib/ImageCache";
 import { AnimatedPage, AnimatedCard } from "@/components/animations";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
 
@@ -285,24 +285,26 @@ export default function RecentSteamDownloads() {
                   <TableHeader>
                     <TableRow className="border-border hover:bg-transparent">
                       <TableHead
-                        className="text-foreground cursor-pointer hover:text-muted-foreground"
+                        className="text-foreground cursor-pointer hover:text-muted-foreground text-center"
                         onClick={() => handleSort("createdAt")}
                       >
                         Timestamp{" "}
                         {sortField === "createdAt" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
-                      <TableHead className="text-foreground">App</TableHead>
-                      <TableHead className="text-foreground">Depot</TableHead>
+                      <TableHead className="text-foreground text-center">App</TableHead>
+                      <TableHead className="text-foreground text-center">Depot</TableHead>
                       <TableHead
-                        className="text-foreground cursor-pointer hover:text-muted-foreground"
+                        className="text-foreground cursor-pointer hover:text-muted-foreground text-center"
                         onClick={() => handleSort("clientIp")}
                       >
                         Client IP{" "}
                         {sortField === "clientIp" && (sortDirection === "asc" ? "↑" : "↓")}
                       </TableHead>
-                      <TableHead className="text-foreground">Hit %</TableHead>
-                      <TableHead className="text-foreground">Miss %</TableHead>
-                      <TableHead className="text-foreground">Download Progress</TableHead>
+                      <TableHead className="text-foreground text-center">Hit %</TableHead>
+                      <TableHead className="text-foreground text-center">Miss %</TableHead>
+                      <TableHead className="text-foreground text-center">
+                        Download Progress
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
