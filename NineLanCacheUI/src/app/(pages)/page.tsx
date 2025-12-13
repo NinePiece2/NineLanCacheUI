@@ -207,18 +207,16 @@ export default function Home() {
     return null;
   };
 
-  interface PieLabelProps {
+  const renderLabel = (props: {
     cx?: number;
     cy?: number;
     midAngle?: number;
     innerRadius?: number;
     outerRadius?: number | string;
-    payload?: { x?: string; y?: number; fill?: string; color?: string };
+    payload?: { x?: string; y?: number; fill?: string; color?: string; name?: string; value?: number };
     value?: number;
     name?: string;
-  }
-
-  const renderLabel = (props: PieLabelProps) => {
+  }) => {
     const { cx, cy, midAngle, innerRadius, outerRadius, payload, value, name } = props;
     const RADIAN = Math.PI / 180;
 
@@ -238,8 +236,8 @@ export default function Home() {
     const x = centerX + radius * Math.cos(-angle * RADIAN);
     const y = centerY + radius * Math.sin(-angle * RADIAN);
 
-    const labelName = payload?.x ?? name ?? "Unknown";
-    const labelValue = payload?.y ?? value ?? 0;
+    const labelName = payload?.x ?? name ?? payload?.name ?? "Unknown";
+    const labelValue = payload?.y ?? value ?? payload?.value ?? 0;
     const sliceFill = payload?.fill ?? payload?.color ?? "var(--foreground)";
 
     const baseRadius = 140;
@@ -248,7 +246,6 @@ export default function Home() {
     if (typeof outerRadius === "number") {
       fontSize = (outerRadius / baseRadius) * baseFontSizeEm;
     } else if (typeof outerRadius === "string" && outerRadius.endsWith("%")) {
-      // Estimate font size for percent-based radius
       const percent = parseFloat(outerRadius) / 100;
       fontSize = percent * baseFontSizeEm * 1.2;
     }
@@ -371,6 +368,7 @@ export default function Home() {
                       cy="50%"
                       outerRadius={"80%"}
                       label={renderLabel}
+                      isAnimationActive={false}
                     >
                       {hitMissData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -403,6 +401,7 @@ export default function Home() {
                       cy="50%"
                       outerRadius={"80%"}
                       label={renderLabel}
+                      isAnimationActive={false}
                     >
                       {serviceSplitData.map((entry, index) => (
                         <Cell
@@ -438,6 +437,7 @@ export default function Home() {
                       cy="50%"
                       outerRadius={"80%"}
                       label={renderLabel}
+                      isAnimationActive={false}
                     >
                       {missBytesByService.map((entry, index) => (
                         <Cell
@@ -473,6 +473,7 @@ export default function Home() {
                       cy="50%"
                       outerRadius={"80%"}
                       label={renderLabel}
+                      isAnimationActive={false}
                     >
                       {hitBytesByService.map((entry, index) => (
                         <Cell
