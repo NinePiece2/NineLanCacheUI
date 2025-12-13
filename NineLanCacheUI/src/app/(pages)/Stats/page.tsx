@@ -299,7 +299,7 @@ export default function Stats() {
                             nameKey="x"
                             cx="50%"
                             cy="50%"
-                            outerRadius={110}
+                            outerRadius={"100%"}
                             // label={renderLabel}
                           >
                             {hitBytesByClient.map((entry, index) => (
@@ -340,7 +340,7 @@ export default function Stats() {
                             nameKey="x"
                             cx="50%"
                             cy="50%"
-                            outerRadius={110}
+                            outerRadius={"100%"}
                             // label={renderLabel}
                           >
                             {missBytesByClient.map((entry, index) => (
