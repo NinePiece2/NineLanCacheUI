@@ -35,7 +35,7 @@ jobs:
         
         - name: Get current time
           id: current_time_step
-          run: echo "::set-output name=time::$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          run: echo "time=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
             
         - name: Build and push
           uses: docker/build-push-action@v6
