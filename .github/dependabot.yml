@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: "npm"
     directory: "/NineLanCacheUI"
     schedule:
-      interval: "weekly"
+      interval: "daily"
       timezone: "America/Toronto"
     commit-message:
       prefix: "deps(npm)"
@@ -11,13 +11,11 @@ updates:
       ui-dependencies:
         patterns:
           - "*"
-    reviewers:
-      - "ninepiece2"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
       timezone: "America/Toronto"
     commit-message:
       prefix: "deps(github-actions)"
@@ -25,13 +23,11 @@ updates:
       github-actions:
         patterns:
           - "*"
-    reviewers:
-      - "ninepiece2"
   
   - package-ecosystem: "nuget"
     directory: "/NineLanCacheUI-API"
     schedule:
-      interval: "weekly"
+      interval: "daily"
       timezone: "America/Toronto"
     commit-message:
       prefix: "deps(nuget)"
@@ -42,5 +38,3 @@ updates:
       api-dependencies:
         patterns:
           - "*"
-    reviewers:
-      - "ninepiece2"
