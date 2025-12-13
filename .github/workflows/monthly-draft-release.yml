@@ -1,0 +1,76 @@
+name: Monthly Draft Release
+
+on:
+  schedule:
+    # First Monday of every month at 00:00 UTC
+    - cron: "0 0 1-7 * 1"
+  workflow_dispatch: {}
+
+jobs:
+  create_draft_release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get Previous Release Tag
+        id: prev
+        run: |
+          # Fetch tags silently (not all repos have tags fetched)
+          git fetch --tags --quiet || true
+
+          LAST_TAG=$(git tag --list | sort -V | tail -n 1)
+          if [ -z "$LAST_TAG" ]; then
+            echo "No previous tags found. Defaulting to 1.00"
+            LAST_TAG="1.00"
+          fi
+
+          echo "previous=$LAST_TAG" >> $GITHUB_OUTPUT
+
+      - name: Compute Next Version
+        id: version
+        run: |
+          PREV="${{ steps.prev.outputs.previous }}"
+
+          # Split major + minor (.XX)
+          MAJOR=$(echo "$PREV" | cut -d'.' -f1)
+          MINOR=$(echo "$PREV" | cut -d'.' -f2)
+
+          # Increment minor
+          NEXT_MINOR=$(printf "%02d" $((10#$MINOR + 1)))
+          NEXT="${MAJOR}.${NEXT_MINOR}"
+
+          echo "next=$NEXT" >> $GITHUB_OUTPUT
+
+      - name: Prepare Release Notes
+        id: notes
+        run: |
+          VERSION="${{ steps.version.outputs.next }}"
+          PREVIOUS="${{ steps.prev.outputs.previous }}"
+          DATE="$(date +%Y-%m-%d)"
+
+          TEMPLATE=".github/RELEASE_TEMPLATE.md"
+          OUTPUT="release_notes.md"
+
+          if [ ! -f "$TEMPLATE" ]; then
+            echo "Missing .github/RELEASE_TEMPLATE.md" >&2
+            exit 1
+          fi
+
+          sed \
+            -e "s/\[VERSION\]/$VERSION/g" \
+            -e "s/\[PREVIOUS_VERSION\]/$PREVIOUS/g" \
+            -e "s/\[DATE\]/$DATE/g" \
+            "$TEMPLATE" > "$OUTPUT"
+
+          echo "file=$OUTPUT" >> $GITHUB_OUTPUT
+
+      - name: Create Draft Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.version.outputs.next }}
+          name: "v${{ steps.version.outputs.next }}"
+          commit: main
+          draft: true
+          bodyFile: ${{ steps.notes.outputs.file }}

@@ -34,6 +34,14 @@ The Backend/API runs a .NET 9 Web API and the Frontend/UI uses NextJS and Nginx.
 <details>
 <summary>Version 1</summary>
 
+Shows a few statistics about the usage per service:
+
+[<img src=images/v1/Dashboard.png height=400>](images/v1/Dashboard.png)
+
+Shows a graph for the outbound usage of a given interface (Changable in Settings):
+
+[<img src=images/v1/DashboardSpeed.png height=300>](images/v1/DashboardSpeed.png)
+
 Shows recent downloads by service:
 
 [<img src="images/v1/RecentDownloads.png" height="400">](images/v1/RecentDownloads.png)
@@ -58,6 +66,14 @@ Shows the settings page where the active interface can be selected for the graph
 
 <details open>
 <summary>Version 2</summary>
+
+Shows a few statistics about the usage per service:
+
+[<img src=images/v2/Dashboard.png height=400>](images/v2/Dashboard.png)
+
+Shows a graph for the outbound usage of a given interface (Changable in Settings):
+
+[<img src=images/v2/DashboardSpeed.png height=300>](images/v2/DashboardSpeed.png)
 
 Shows recent downloads by service:
 

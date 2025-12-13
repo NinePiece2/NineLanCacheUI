@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { formatBytes } from "@/lib/Utilities";
-import { getSignalRConnection, startConnection } from "../../lib/SignalR";
+import { getSignalRConnection, startConnection } from "../../../lib/SignalR";
 import { imageCache } from "@/lib/ImageCache";
 import { AnimatedPage, AnimatedCard } from "@/components/animations";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
@@ -115,6 +115,7 @@ const PreloadableImage = ({ appId }: { appId: number }) => {
             onError={handleError}
             onLoad={handleLoad}
             quality={75}
+            priority={false}
           />
         )}
       </a>
@@ -122,7 +123,7 @@ const PreloadableImage = ({ appId }: { appId: number }) => {
   );
 };
 
-export default function RecentSteamDownloads() {
+export default function RecentDownloads() {
   const [data, setData] = useState<DownloadEvent[]>([]);
   const [selectedRange, setSelectedRange] = useState(
     () => getStoredFilters()?.selectedRange || "0",
@@ -143,6 +144,7 @@ export default function RecentSteamDownloads() {
     if (!filterText) return true;
     const searchLower = filterText.toLowerCase();
     return (
+      item.cacheIdentifier.toLowerCase().includes(searchLower) ||
       item.clientIp.toLowerCase().includes(searchLower) ||
       (item.steamDepot?.steamApp?.name || "").toLowerCase().includes(searchLower) ||
       (item.downloadIdentifier?.toString() || "").includes(searchLower)
@@ -177,9 +179,7 @@ export default function RecentSteamDownloads() {
       params.append("excludeIPs", excludeIPs.toString());
       params.append("limit", "100");
 
-      const res = await fetch(
-        `/api/proxy/RecentDownloads/GetRecentSteamDownloads?${params.toString()}`,
-      );
+      const res = await fetch(`/api/proxy/RecentDownloads/GetRecentDownloads?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to fetch data");
 
       const newData: DownloadEvent[] = await res.json();
@@ -205,9 +205,7 @@ export default function RecentSteamDownloads() {
       params.append("excludeIPs", excludeIPs.toString());
       params.append("limit", "20");
 
-      const res = await fetch(
-        `/api/proxy/RecentDownloads/GetRecentSteamDownloads?${params.toString()}`,
-      );
+      const res = await fetch(`/api/proxy/RecentDownloads/GetRecentDownloads?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to fetch new data");
 
       const newData: DownloadEvent[] = await res.json();
@@ -233,16 +231,12 @@ export default function RecentSteamDownloads() {
 
   useEffect(() => {
     const connection = getSignalRConnection();
+    connection.on("UpdateDownloadEvents", fetchAndMergeNewData);
 
-    const handler = () => {
-      fetchAndMergeNewData();
-    };
-
-    connection.on("UpdateDownloadEvents", handler);
     startConnection();
 
     return () => {
-      connection.off("UpdateDownloadEvents", handler);
+      connection.off("UpdateDownloadEvents", fetchAndMergeNewData);
     };
   }, [fetchAndMergeNewData]);
 
@@ -252,9 +246,7 @@ export default function RecentSteamDownloads() {
         className="p-4 mx-auto rounded-3xl bg-background"
         style={{ width: "98%", maxWidth: "1600px" }}
       >
-        <h1 className="text-3xl font-bold mb-4 text-center text-foreground">
-          Recent Steam Downloads
-        </h1>
+        <h1 className="text-3xl font-bold mb-4 text-center text-foreground">Recent Downloads</h1>
 
         <DateRangeFilter
           selectedRange={selectedRange}
@@ -270,7 +262,7 @@ export default function RecentSteamDownloads() {
           <Card className="bg-card border-border">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-foreground">Recent Steam Downloads</CardTitle>
+                <CardTitle className="text-foreground">Recent Downloads</CardTitle>
                 <Input
                   placeholder="Search..."
                   value={filterText}
@@ -284,6 +276,13 @@ export default function RecentSteamDownloads() {
                 <Table>
                   <TableHeader>
                     <TableRow className="border-border hover:bg-transparent">
+                      <TableHead
+                        className="text-foreground cursor-pointer hover:text-muted-foreground text-center"
+                        onClick={() => handleSort("cacheIdentifier")}
+                      >
+                        Service{" "}
+                        {sortField === "cacheIdentifier" && (sortDirection === "asc" ? "↑" : "↓")}
+                      </TableHead>
                       <TableHead
                         className="text-foreground cursor-pointer hover:text-muted-foreground text-center"
                         onClick={() => handleSort("createdAt")}
@@ -302,9 +301,6 @@ export default function RecentSteamDownloads() {
                       </TableHead>
                       <TableHead className="text-foreground text-center">Hit %</TableHead>
                       <TableHead className="text-foreground text-center">Miss %</TableHead>
-                      <TableHead className="text-foreground text-center">
-                        Download Progress
-                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -317,13 +313,10 @@ export default function RecentSteamDownloads() {
                       const hitPercent = total > 0 ? (row.cacheHitBytes / total) * 100 : 0;
                       const missPercent = total > 0 ? (row.cacheMissBytes / total) * 100 : 0;
                       const appId = row.steamDepot?.steamAppId;
-                      const totalBytes = row.totalBytes ?? 0;
-                      const downloaded = (row.cacheMissBytes ?? 0) + (row.cacheHitBytes ?? 0);
-                      const downloadPercent =
-                        totalBytes > 0 ? Math.min((downloaded / totalBytes) * 100, 100) : 0;
 
                       return (
                         <TableRow key={row.id} className="border-border hover:bg-secondary">
+                          <TableCell className="text-foreground">{row.cacheIdentifier}</TableCell>
                           <TableCell className="text-foreground text-sm whitespace-nowrap">
                             <div>
                               {formatDateTime(created)} → {formatDateTime(updated)}
@@ -377,29 +370,6 @@ export default function RecentSteamDownloads() {
                               <div className="text-xs mt-1 text-foreground text-center">
                                 {formatBytes(row.cacheMissBytes)} • {missPercent.toFixed(1)}%
                               </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="w-full min-w-[150px]">
-                              {totalBytes === 0 ? (
-                                <span className="text-red-400 text-sm">
-                                  Could not find Steam Manifest
-                                </span>
-                              ) : (
-                                <>
-                                  <div className="h-4 bg-muted rounded overflow-hidden">
-                                    <div
-                                      className="h-full bg-indigo-500"
-                                      style={{ width: `${downloadPercent}%` }}
-                                    ></div>
-                                  </div>
-                                  <div className="text-xs mt-1 text-foreground text-center">
-                                    {downloadPercent < 100
-                                      ? `${formatBytes(downloaded)} / ${formatBytes(totalBytes)} (${downloadPercent.toFixed(1)}%)`
-                                      : `${formatBytes(downloaded)} (100%)`}
-                                  </div>
-                                </>
-                              )}
                             </div>
                           </TableCell>
                         </TableRow>
