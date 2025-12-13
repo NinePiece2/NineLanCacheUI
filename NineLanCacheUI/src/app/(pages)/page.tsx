@@ -10,9 +10,9 @@ import {
   YAxis,
   CartesianGrid,
   ResponsiveContainer,
-  Legend,
   Tooltip,
 } from "recharts";
+// import { Legend } from "recharts";
 import { formatBytes, chartPalette, formatBits } from "@/lib/Utilities";
 import React, { useEffect, useState, useCallback } from "react";
 import { getSignalRConnection, startConnection } from "@/lib/SignalR";
@@ -207,8 +207,73 @@ export default function Home() {
     return null;
   };
 
-  const renderLabel = (entry: { name?: string; x?: string; value?: number; y?: number }) => {
-    return `${entry.name || entry.x}: ${formatBytes(entry.value ?? entry.y ?? 0)}`;
+  interface PieLabelProps {
+    cx?: number;
+    cy?: number;
+    midAngle?: number;
+    innerRadius?: number;
+    outerRadius?: number | string;
+    payload?: { x?: string; y?: number; fill?: string; color?: string };
+    value?: number;
+    name?: string;
+  }
+
+  const renderLabel = (props: PieLabelProps) => {
+    const { cx, cy, midAngle, innerRadius, outerRadius, payload, value, name } = props;
+    const RADIAN = Math.PI / 180;
+
+    const centerX = typeof cx === "number" ? cx : 0;
+    const centerY = typeof cy === "number" ? cy : 0;
+    const EXTRA_OFFSET = 15;
+    const innerR = typeof innerRadius === "number" ? innerRadius : 0;
+    let outerR = 0;
+    if (typeof outerRadius === "number") {
+      outerR = outerRadius;
+    } else if (typeof outerRadius === "string" && outerRadius.endsWith("%")) {
+      const percent = parseFloat(outerRadius) / 100;
+      outerR = 170 * percent;
+    }
+    const radius = innerR + outerR * 1.05 + EXTRA_OFFSET;
+    const angle = typeof midAngle === "number" ? midAngle : 0;
+    const x = centerX + radius * Math.cos(-angle * RADIAN);
+    const y = centerY + radius * Math.sin(-angle * RADIAN);
+
+    const labelName = payload?.x ?? name ?? "Unknown";
+    const labelValue = payload?.y ?? value ?? 0;
+    const sliceFill = payload?.fill ?? payload?.color ?? "var(--foreground)";
+
+    const baseRadius = 140;
+    const baseFontSizeEm = 0.85;
+    let fontSize = baseFontSizeEm;
+    if (typeof outerRadius === "number") {
+      fontSize = (outerRadius / baseRadius) * baseFontSizeEm;
+    } else if (typeof outerRadius === "string" && outerRadius.endsWith("%")) {
+      // Estimate font size for percent-based radius
+      const percent = parseFloat(outerRadius) / 100;
+      fontSize = percent * baseFontSizeEm * 1.2;
+    }
+    const fontSizeStr = `${fontSize}em`;
+
+    return (
+      <text
+        x={x}
+        y={y}
+        fill={sliceFill}
+        fontFamily="Poppins, sans-serif"
+        fontSize={fontSizeStr}
+        fontWeight={600}
+        textAnchor={x > centerX ? "start" : "end"}
+        dominantBaseline="central"
+        style={{
+          pointerEvents: "none",
+          paintOrder: "stroke",
+          stroke: "var(--background)",
+          strokeWidth: 3,
+        }}
+      >
+        {`${labelName}: ${formatBytes(labelValue)}`}
+      </text>
+    );
   };
 
   useEffect(() => {
@@ -294,9 +359,9 @@ export default function Home() {
                 Cache Hit vs Miss (Bytes)
               </CardTitle>
             </CardHeader>
-            <CardContent className="h-64">
+            <CardContent className="h-[40vw] min-h-[220px] max-h-[340px] md:h-70">
               {hitMissData[0].y > 0 && (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minHeight={220} minWidth={220}>
                   <PieChart>
                     <Pie
                       data={hitMissData}
@@ -304,7 +369,7 @@ export default function Home() {
                       nameKey="x"
                       cx="50%"
                       cy="50%"
-                      outerRadius={120}
+                      outerRadius={"80%"}
                       label={renderLabel}
                     >
                       {hitMissData.map((entry, index) => (
@@ -312,14 +377,6 @@ export default function Home() {
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
-                    {/* <Legend
-                      wrapperStyle={{
-                        fontFamily: "Poppins, sans-serif",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        color: "var(--foreground)",
-                      }}
-                    /> */}
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -334,9 +391,9 @@ export default function Home() {
                 Download Requests by Service
               </CardTitle>
             </CardHeader>
-            <CardContent className="h-64">
+            <CardContent className="h-[40vw] min-h-[220px] max-h-[340px] md:h-70">
               {serviceSplitData.length > 0 && (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minHeight={220} minWidth={220}>
                   <PieChart>
                     <Pie
                       data={serviceSplitData}
@@ -344,7 +401,7 @@ export default function Home() {
                       nameKey="x"
                       cx="50%"
                       cy="50%"
-                      outerRadius={120}
+                      outerRadius={"80%"}
                       label={renderLabel}
                     >
                       {serviceSplitData.map((entry, index) => (
@@ -355,14 +412,6 @@ export default function Home() {
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
-                    {/* <Legend
-                      wrapperStyle={{
-                        fontFamily: "Poppins, sans-serif",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        color: "var(--foreground)",
-                      }}
-                    /> */}
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -377,9 +426,9 @@ export default function Home() {
                 Miss Bytes by Service
               </CardTitle>
             </CardHeader>
-            <CardContent className="h-64">
+            <CardContent className="h-[40vw] min-h-[220px] max-h-[340px] md:h-70">
               {missBytesByService.length > 0 && (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minHeight={220} minWidth={220}>
                   <PieChart>
                     <Pie
                       data={missBytesByService}
@@ -387,7 +436,7 @@ export default function Home() {
                       nameKey="x"
                       cx="50%"
                       cy="50%"
-                      outerRadius={120}
+                      outerRadius={"80%"}
                       label={renderLabel}
                     >
                       {missBytesByService.map((entry, index) => (
@@ -398,14 +447,6 @@ export default function Home() {
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
-                    {/* <Legend
-                      wrapperStyle={{
-                        fontFamily: "Poppins, sans-serif",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        color: "var(--foreground)",
-                      }}
-                    /> */}
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -420,9 +461,9 @@ export default function Home() {
                 Hit Bytes by Service
               </CardTitle>
             </CardHeader>
-            <CardContent className="h-64">
+            <CardContent className="h-[40vw] min-h-[220px] max-h-[340px] md:h-70">
               {hitBytesByService.length > 0 && (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minHeight={220} minWidth={220}>
                   <PieChart>
                     <Pie
                       data={hitBytesByService}
@@ -430,7 +471,7 @@ export default function Home() {
                       nameKey="x"
                       cx="50%"
                       cy="50%"
-                      outerRadius={120}
+                      outerRadius={"80%"}
                       label={renderLabel}
                     >
                       {hitBytesByService.map((entry, index) => (
@@ -441,14 +482,6 @@ export default function Home() {
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
-                    {/* <Legend
-                      wrapperStyle={{
-                        fontFamily: "Poppins, sans-serif",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        color: "var(--foreground)",
-                      }}
-                    /> */}
                   </PieChart>
                 </ResponsiveContainer>
               )}

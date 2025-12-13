@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import Button from "../../components/Button";
+import Button from "../../../components/Button";
 import { AnimatedPage, AnimatedCard } from "@/components/animations";
 import {
   Select,

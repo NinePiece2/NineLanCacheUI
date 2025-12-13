@@ -10,7 +10,8 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+// import { Legend } from "recharts";
 import { formatBytes, chartPalette } from "@/lib/Utilities";
 import React, { useEffect, useState, useCallback } from "react";
 import { getSignalRConnection, startConnection } from "@/lib/SignalR";
@@ -151,9 +152,9 @@ export default function Stats() {
     return null;
   };
 
-  const renderLabel = (entry: { name?: string; x?: string; value?: number; y?: number }) => {
-    return `${entry.name || entry.x}: ${formatBytes(entry.value ?? entry.y ?? 0)}`;
-  };
+  // const renderLabel = (entry: { name?: string; x?: string; value?: number; y?: number }) => {
+  //   return `${entry.name || entry.x}: ${formatBytes(entry.value ?? entry.y ?? 0)}`;
+  // };
 
   const filteredData = hitMissGridData.filter(
     (item) => !filterText || item.ipAddress.toLowerCase().includes(filterText.toLowerCase()),
