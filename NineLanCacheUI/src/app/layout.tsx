@@ -47,9 +47,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased bg-background text-foreground">
-        {children}
-      </body>
+      <body className="antialiased bg-background text-foreground">{children}</body>
     </html>
   );
 }
