@@ -43,7 +43,6 @@ jobs:
             ghcr.io/ninepiece2/ninelancacheui:ui-${{ github.event.release.tag_name }}
             ghcr.io/ninepiece2/ninelancacheui:ui
           build-args: |
-            SYNCFUSION_LICENSE=${{ secrets.SyncfusionLicense }}
             VERSION=${{ github.event.release.tag_name }}
             BUILD_DATE=${{ github.event.release.created_at }}
             VCS_REF=${{ github.sha }}
