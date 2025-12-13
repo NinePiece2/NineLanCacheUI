@@ -44,6 +44,9 @@ jobs:
             file: ./NineLanCacheUI-API/NineLanCacheUI-API/Dockerfile
             push: true
             tags: |
+              ${{ secrets.DOCKER_USERNAME }}/nine-lancache-ui:api-beta
+              ghcr.io/ninepiece2/ninelancacheui:api-beta
+            build-args: |
               VERSION=beta
               BUILD_DATE=${{ steps.current_time_step.outputs.time }}
               VCS_REF=${{ github.sha }}
