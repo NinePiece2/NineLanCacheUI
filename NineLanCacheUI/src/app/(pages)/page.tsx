@@ -213,7 +213,14 @@ export default function Home() {
     midAngle?: number;
     innerRadius?: number;
     outerRadius?: number | string;
-    payload?: { x?: string; y?: number; fill?: string; color?: string; name?: string; value?: number };
+    payload?: {
+      x?: string;
+      y?: number;
+      fill?: string;
+      color?: string;
+      name?: string;
+      value?: number;
+    };
     value?: number;
     name?: string;
   }) => {

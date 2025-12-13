@@ -9,10 +9,7 @@ import { usePathname } from "next/navigation";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isActive = (href: string) =>
-    href === "/"
-      ? pathname === "/"
-      : pathname.startsWith(href);
+  const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
   return (
     <ThemeProvider defaultTheme="system" storageKey="ninelancache-theme">
       <div className="flex flex-col min-h-screen">
