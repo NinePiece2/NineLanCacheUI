@@ -11,6 +11,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Ensure first Monday of the month
+        run: |
+          DAY_OF_MONTH=$(date -u +%d)
+          DAY_OF_WEEK=$(date -u +%u) # 1 = Monday
+
+          if [ "$DAY_OF_WEEK" -ne 1 ] || [ "$DAY_OF_MONTH" -gt 7 ]; then
+            echo "Not the first Monday — exiting."
+            exit 0
+          fi
+
+          echo "Confirmed first Monday — continuing."
+
       - name: Checkout
         uses: actions/checkout@v6
 
@@ -74,3 +86,25 @@ jobs:
           commit: main
           draft: true
           bodyFile: ${{ steps.notes.outputs.file }}
+          generateReleaseNotes: true
+      
+      - name: Notify via GitHub Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = "${{ steps.version.outputs.next }}";
+
+            const body =
+              "A new **draft release** has been created.\n\n" +
+              "- **Version:** v" + version + "\n" +
+              "- **Status:** Draft\n" +
+              "- **Next step:** Review release notes and publish\n\n" +
+              "This issue was auto-generated.";
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: "📝 Draft release v" + version + " created",
+              body,
+              labels: ["release", "draft"]
+            });
