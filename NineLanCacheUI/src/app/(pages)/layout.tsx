@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { BarChart3, Download, Gamepad2, Activity, Settings as SettingsIcon } from "lucide-react";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -21,18 +22,13 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                   href="/"
                   className="flex title-font font-bold items-center text-green-500 hover:text-green-400 transition-colors gap-2 shrink-0"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    className="w-6 h-6 text-white p-0.5 bg-green-500 rounded-md shrink-0"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                  </svg>
+                  <Image
+                    src="/NineLanCacheUI_Logo.png"
+                    alt="Nine LanCache Logo"
+                    width={24}
+                    height={24}
+                    className="shrink-0"
+                  />
                   <span className="text-xl font-bold hidden sm:inline">Nine LanCache UI</span>
                 </Link>
                 <div className="hidden md:block h-6 w-px bg-border mx-3" aria-hidden="true" />
