@@ -32,19 +32,9 @@ body {
   overflow-x: hidden;
 }
 
-header {
-  width: 100%;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background-color: var(--background);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
 .container {
   padding: 20px;
   background: var(--background);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   color: var(--foreground);
   margin: 20px auto;
