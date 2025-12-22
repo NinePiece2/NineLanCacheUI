@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useRef } from "react";
-import NextImage from "next/image";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -14,114 +13,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { formatBytes } from "@/lib/Utilities";
 import { getSignalRConnection, startConnection } from "../../../lib/SignalR";
-import { imageCache } from "@/lib/ImageCache";
+import PreloadableImage from "@/components/PreloadableImage";
+import { getStoredFilters, setStoredFilters } from "@/lib/filterStorage";
+import { DownloadEvent } from "@/lib/recentDownloadsTypes";
 import { AnimatedPage, AnimatedCard } from "@/components/animations";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
-
-interface SteamDepot {
-  id: number;
-  steamAppId: number;
-  steamApp: {
-    name: string;
-  };
-}
-
-interface DownloadEvent {
-  id: number;
-  cacheIdentifier: string;
-  downloadIdentifier?: number;
-  downloadIdentifierString?: string;
-  clientIp: string;
-  createdAt: string;
-  lastUpdatedAt: string;
-  cacheHitBytes: number;
-  cacheMissBytes: number;
-  totalBytes?: number;
-  steamDepot?: SteamDepot | null;
-}
-
-type Filters = {
-  selectedRange?: string;
-  customDays?: number;
-  excludeIPs?: string[];
-};
-
-const FILTER_KEY = "globalFilters";
-
-function getStoredFilters() {
-  if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem(FILTER_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
-function setStoredFilters(filters: Filters) {
-  localStorage.setItem(FILTER_KEY, JSON.stringify(filters));
-}
-
-const PreloadableImage = ({ appId }: { appId: number }) => {
-  const imageUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
-  const fallbackUrl = "https://steamdb.info/static/img/applogo.svg";
-
-  const [currentSrc, setCurrentSrc] = useState(imageUrl);
-  const hasErrored = useRef(false);
-
-  const handleError = () => {
-    console.log("Image error for appId:", appId, "hasErrored:", hasErrored.current);
-    if (!hasErrored.current) {
-      hasErrored.current = true;
-      setCurrentSrc(fallbackUrl);
-      console.log("Switched to fallback for appId:", appId);
-      imageCache.setStatus(imageUrl, "missing");
-    }
-  };
-
-  const handleLoad = () => {
-    if (currentSrc === imageUrl) {
-      imageCache.setStatus(imageUrl, "exists");
-    }
-  };
-
-  return (
-    <div className="flex items-center justify-center">
-      <a href={`https://steamdb.info/app/${appId}/`} target="_blank" rel="noopener noreferrer">
-        {currentSrc === fallbackUrl ? (
-          <object
-            data={fallbackUrl}
-            type="image/svg+xml"
-            width={184}
-            height={69}
-            className="object-cover rounded shadow bg-muted"
-          >
-            <div
-              className="flex items-center justify-center"
-              style={{ width: "184px", height: "69px" }}
-            >
-              Steam App
-            </div>
-          </object>
-        ) : (
-          <NextImage
-            src={imageUrl}
-            alt={`App ${appId}`}
-            width={184}
-            height={69}
-            className="object-cover rounded shadow bg-muted"
-            loading="lazy"
-            onError={handleError}
-            onLoad={handleLoad}
-            quality={75}
-            priority={false}
-          />
-        )}
-      </a>
-    </div>
-  );
-};
 
 export default function RecentDownloads() {
   const [data, setData] = useState<DownloadEvent[]>([]);
@@ -138,7 +34,8 @@ export default function RecentDownloads() {
     setStoredFilters({ selectedRange, customDays, excludeIPs });
   }, [selectedRange, customDays, excludeIPs]);
 
-  const days = selectedRange === "custom" ? parseInt(customDays) || 0 : parseInt(selectedRange);
+  const days =
+    selectedRange === "custom" ? parseInt(String(customDays)) || 0 : parseInt(selectedRange);
 
   const filteredData = data.filter((item) => {
     if (!filterText) return true;

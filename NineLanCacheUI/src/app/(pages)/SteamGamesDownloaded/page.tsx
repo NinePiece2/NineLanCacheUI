@@ -1,10 +1,9 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
-import NextImage from "next/image";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getSignalRConnection, startConnection } from "@/lib/SignalR";
-import { imageCache } from "@/lib/ImageCache";
+import PreloadableImage from "@/components/PreloadableImage";
 import { AnimatedPage, AnimatedCard } from "@/components/animations";
 
 type Game = {
@@ -13,71 +12,6 @@ type Game = {
 };
 
 const PAGE_SIZE = 6;
-
-const PreloadableImage = ({ appId }: { appId: number }) => {
-  const imageUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
-  const fallbackUrl = "https://steamdb.info/static/img/applogo.svg";
-
-  const [currentSrc, setCurrentSrc] = useState(imageUrl);
-  const hasErrored = useRef(false);
-
-  const handleError = () => {
-    console.log("Image error for appId:", appId, "hasErrored:", hasErrored.current);
-    if (!hasErrored.current) {
-      hasErrored.current = true;
-      setCurrentSrc(fallbackUrl);
-      console.log("Switched to fallback for appId:", appId);
-      imageCache.setStatus(imageUrl, "missing");
-    }
-  };
-
-  const handleLoad = () => {
-    if (currentSrc === imageUrl) {
-      imageCache.setStatus(imageUrl, "exists");
-    }
-  };
-
-  return (
-    <div className="flex items-center justify-center">
-      <a
-        className="flex w-full h-full align-items-center justify-center"
-        href={`https://steamdb.info/app/${appId}/`}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ maxHeight: "215px" }}
-      >
-        {currentSrc === fallbackUrl ? (
-          <object
-            data={fallbackUrl}
-            type="image/svg+xml"
-            width={368}
-            height={172}
-            className="object-cover rounded shadow bg-muted"
-          >
-            <div
-              className="flex items-center justify-center"
-              style={{ width: "368px", height: "172px" }}
-            >
-              Steam App
-            </div>
-          </object>
-        ) : (
-          <NextImage
-            src={imageUrl}
-            alt={`App ${appId}`}
-            width={368}
-            height={172}
-            className="object-cover rounded shadow bg-muted"
-            loading="lazy"
-            onError={handleError}
-            onLoad={handleLoad}
-            quality={75}
-          />
-        )}
-      </a>
-    </div>
-  );
-};
 
 export default function SteamGamesPage() {
   const [games, setGames] = useState<Game[]>([]);
@@ -179,7 +113,7 @@ export default function SteamGamesPage() {
                 className="rounded shadow-lg p-4 bg-card border border-border hover:border-foreground/50 transition"
                 style={{}}
               >
-                <PreloadableImage key={game.appid} appId={game.appid} />
+                <PreloadableImage key={game.appid} appId={game.appid} width={368} height={172} />
                 <h2 className="text-lg font-bold text-center text-foreground mt-2">{game.name}</h2>
               </div>
             ))}

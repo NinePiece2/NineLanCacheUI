@@ -12,7 +12,6 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-// import { Legend } from "recharts";
 import { formatBytes, chartPalette, formatBits } from "@/lib/Utilities";
 import React, { useEffect, useState, useCallback } from "react";
 import { getSignalRConnection, startConnection } from "@/lib/SignalR";

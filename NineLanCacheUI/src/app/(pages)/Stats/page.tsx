@@ -11,7 +11,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-// import { Legend } from "recharts";
 import { formatBytes, chartPalette } from "@/lib/Utilities";
 import React, { useEffect, useState, useCallback } from "react";
 import { getSignalRConnection, startConnection } from "@/lib/SignalR";
@@ -151,10 +150,6 @@ export default function Stats() {
     }
     return null;
   };
-
-  // const renderLabel = (entry: { name?: string; x?: string; value?: number; y?: number }) => {
-  //   return `${entry.name || entry.x}: ${formatBytes(entry.value ?? entry.y ?? 0)}`;
-  // };
 
   const filteredData = hitMissGridData.filter(
     (item) => !filterText || item.ipAddress.toLowerCase().includes(filterText.toLowerCase()),
@@ -300,7 +295,6 @@ export default function Stats() {
                             cx="50%"
                             cy="50%"
                             outerRadius={"100%"}
-                            // label={renderLabel}
                           >
                             {hitBytesByClient.map((entry, index) => (
                               <Cell
@@ -310,14 +304,6 @@ export default function Stats() {
                             ))}
                           </Pie>
                           <Tooltip content={<CustomTooltip />} />
-                          {/* <Legend
-                            wrapperStyle={{
-                              fontFamily: "Poppins, sans-serif",
-                              fontSize: "12px",
-                              fontWeight: "600",
-                              color: "var(--foreground)",
-                            }}
-                          /> */}
                         </PieChart>
                       </ResponsiveContainer>
                     )}
@@ -351,14 +337,6 @@ export default function Stats() {
                             ))}
                           </Pie>
                           <Tooltip content={<CustomTooltip />} />
-                          {/* <Legend
-                            wrapperStyle={{
-                              fontFamily: "Poppins, sans-serif",
-                              fontSize: "12px",
-                              fontWeight: "600",
-                              color: "var(--foreground)",
-                            }}
-                          /> */}
                         </PieChart>
                       </ResponsiveContainer>
                     )}

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import Button from "../../../components/Button";
+import { Button } from "@/components/ui/button";
 import { AnimatedPage, AnimatedCard } from "@/components/animations";
 import {
   Select,
@@ -210,8 +210,8 @@ export default function SettingsPage() {
                     onClick={addIp}
                     className={`px-6 py-2 rounded font-semibold text-white transition ${
                       !newIp.trim() || !!ipError || !isValidIp(normalizeIp(newIp.trim())) || adding
-                        ? "bg-indigo-400 cursor-not-allowed"
-                        : "bg-indigo-600 hover:bg-indigo-700"
+                        ? "bg-[#74d678] cursor-not-allowed"
+                        : "bg-[#4caf50] hover:bg-[#368f39]"
                     }`}
                   >
                     {adding ? "Adding..." : "Add"}

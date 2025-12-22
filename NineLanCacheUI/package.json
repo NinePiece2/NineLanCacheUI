@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md,css,scss,html,mdx}\"",
-    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md,css,scss,html,mdx}\""
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md,css,scss,html,mdx}\"",
+    "predev": "npm run format",
+    "prebuild": "npm run format && npm run lint"
   },
   "dependencies": {
     "@microsoft/signalr": "^10.0.0",
