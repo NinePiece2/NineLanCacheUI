@@ -4,7 +4,15 @@ import Link from "next/link";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Download, Gamepad2, Activity, Settings as SettingsIcon, Menu, X } from "lucide-react";
+import {
+  BarChart3,
+  Download,
+  Gamepad2,
+  Activity,
+  Settings as SettingsIcon,
+  Menu,
+  X,
+} from "lucide-react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { useState } from "react";
@@ -16,8 +24,11 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   return (
     <ThemeProvider defaultTheme="system" storageKey="ninelancache-theme">
       <div className="flex flex-col min-h-screen">
-        <header className="border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 sticky top-0 z-50">
-          <div className="container mx-auto" style={{ paddingTop: "0.5em", paddingBottom: "0.5em"}}>
+        <header className="border-b border-border bg-background sticky top-0 z-50">
+          <div
+            className="container mx-auto"
+            style={{ paddingTop: "0.5em", paddingBottom: "0.5em" }}
+          >
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <Link
@@ -111,7 +122,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           </div>
           <div
             className={`md:hidden border-t border-border bg-background overflow-hidden transition-all duration-400 ease-out ${
-              mobileOpen ? "max-h-200 opacity-100 translate-y-0" : "max-h-0 opacity-0 -translate-y-2"
+              mobileOpen
+                ? "max-h-200 opacity-100 translate-y-0"
+                : "max-h-0 opacity-0 -translate-y-2"
             }`}
             aria-hidden={!mobileOpen}
           >
