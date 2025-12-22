@@ -18,6 +18,11 @@ services:
       - "/mnt/NvmeSSD/LanCacheData/logs:/var/ninelancacheui/lancachelogs:ro"
     dns:
       - 192.168.15.200
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "2"
   ui:
     image: ninepiece2/nine-lancache-ui:ui
     restart: unless-stopped
