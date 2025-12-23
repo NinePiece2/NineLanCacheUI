@@ -362,7 +362,7 @@ export default function Home() {
                 Cache Hit vs Miss (Bytes)
               </CardTitle>
             </CardHeader>
-            <CardContent className="h-[40vw] min-h-[220px] max-h-[340px] md:h-70">
+            <CardContent className="h-[45vh] min-h-[220px] md:h-90">
               {hitMissData[0].y > 0 && (
                 <ResponsiveContainer width="100%" height="100%" minHeight={220} minWidth={220}>
                   <PieChart>
@@ -395,7 +395,7 @@ export default function Home() {
                 Download Requests by Service
               </CardTitle>
             </CardHeader>
-            <CardContent className="h-[40vw] min-h-[220px] max-h-[340px] md:h-70">
+            <CardContent className="h-[45vh] min-h-[220px] md:h-90">
               {serviceSplitData.length > 0 && (
                 <ResponsiveContainer width="100%" height="100%" minHeight={220} minWidth={220}>
                   <PieChart>
@@ -431,7 +431,7 @@ export default function Home() {
                 Miss Bytes by Service
               </CardTitle>
             </CardHeader>
-            <CardContent className="h-[40vw] min-h-[220px] max-h-[340px] md:h-70">
+            <CardContent className="h-[45vh] min-h-[220px] md:h-90">
               {missBytesByService.length > 0 && (
                 <ResponsiveContainer width="100%" height="100%" minHeight={220} minWidth={220}>
                   <PieChart>
@@ -467,7 +467,7 @@ export default function Home() {
                 Hit Bytes by Service
               </CardTitle>
             </CardHeader>
-            <CardContent className="h-[40vw] min-h-[220px] max-h-[340px] md:h-70">
+            <CardContent className="h-[45vh] min-h-[220px] md:h-90">
               {hitBytesByService.length > 0 && (
                 <ResponsiveContainer width="100%" height="100%" minHeight={220} minWidth={220}>
                   <PieChart>
