@@ -28,9 +28,14 @@ jobs:
 
       - name: Build
         run: dotnet build --no-restore --configuration Release
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
 
       - name: Build Docker image
-        run: docker build -t ninelanecacheui-api:test .
+        run: docker build -t ninelanecacheui-api:test -f ./NineLanCacheUI-API/Dockerfile .
 
     #   - name: Run tests
     #     run: dotnet test --no-build --configuration Release --verbosity normal
