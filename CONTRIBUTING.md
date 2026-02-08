@@ -70,10 +70,13 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 ```bash
 cd NineLanCacheUI-API/NineLanCacheUI-API
 dotnet restore
+
 dotnet run
+# or
+dotnet watch
 ```
 
-The API will be available at `http://localhost:7401`
+The API will be available at `http://localhost:5150`
 
 ### UI Development Setup
 
