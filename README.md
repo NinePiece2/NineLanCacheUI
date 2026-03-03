@@ -20,6 +20,7 @@
     - [Issue: My access.log file is updated but the backend isn't reading the new lines](#issue-my-accesslog-file-is-updated-but-the-backend-isnt-reading-the-new-lines)
   - [License](#license)
   - [References:](#references)
+  - [Star History](#star-history)
 
 
 ## Introduction
@@ -233,3 +234,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## References:
 - https://github.com/devedse/DeveLanCacheUI_Backend?tab=readme-ov-file
+
+## Star History
+
+<a href="https://www.star-history.com/#NinePiece2/NineLanCacheUI&type=date&legend=bottom-right">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=NinePiece2/NineLanCacheUI&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=NinePiece2/NineLanCacheUI&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=NinePiece2/NineLanCacheUI&type=date&legend=top-left" />
+ </picture>
+</a>
