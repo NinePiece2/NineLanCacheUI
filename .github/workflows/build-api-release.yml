@@ -32,7 +32,7 @@ jobs:
           driver: docker-container
 
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./NineLanCacheUI-API
           file: ./NineLanCacheUI-API/NineLanCacheUI-API/Dockerfile
