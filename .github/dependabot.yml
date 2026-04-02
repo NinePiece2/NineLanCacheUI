@@ -5,6 +5,8 @@ updates:
     schedule:
       interval: "daily"
       timezone: "America/Toronto"
+    cooldown:
+      default-days: 3
     commit-message:
       prefix: "deps(npm)"
     groups:
@@ -17,6 +19,8 @@ updates:
     schedule:
       interval: "daily"
       timezone: "America/Toronto"
+    cooldown:
+      default-days: 3
     commit-message:
       prefix: "deps(github-actions)"
     groups:
@@ -29,6 +33,8 @@ updates:
     schedule:
       interval: "daily"
       timezone: "America/Toronto"
+    cooldown:
+      default-days: 3
     commit-message:
       prefix: "deps(nuget)"
     ignore:
