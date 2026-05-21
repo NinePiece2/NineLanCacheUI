@@ -38,7 +38,7 @@ jobs:
           run: echo "time=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
             
         - name: Build and push
-          uses: docker/build-push-action@v7
+          uses: docker/build-push-action@v7.1.0
           with:
             context: ./NineLanCacheUI
             file: ./NineLanCacheUI/Dockerfile
