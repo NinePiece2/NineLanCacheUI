@@ -29,7 +29,7 @@ jobs:
     if: needs.guard.outputs.run == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.0
 
       - name: Get Previous Release Tag
         id: prev
