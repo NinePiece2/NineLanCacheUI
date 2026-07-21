@@ -237,10 +237,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Star History
 
-<a href="https://www.star-history.com/#NinePiece2/NineLanCacheUI&type=date&legend=bottom-right">
+<a href="https://www.star-history.com/?type=date&legend=bottom-right&repos=NinePiece2%2FNineLanCacheUI">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=NinePiece2/NineLanCacheUI&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=NinePiece2/NineLanCacheUI&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=NinePiece2/NineLanCacheUI&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=NinePiece2/NineLanCacheUI&type=date&theme=dark&legend=bottom-right&sealed_token=kRfme6MArfhWpiEnnS68XzB2s-e2QYrUvWv56Fsk5VnoV1lHfQiQI1QLkEixqbNx63q1bXKKEE0pOWkUscOTkzwNslyn8xunDap16E9HgmFMOsSwc863zgzqQBgJ4StZQ88YjyAO__6E12nK_HjRkWTXxNl5xyWuF1mcAwhe-kbMS3lPMp-BKyAxw4vQ" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=NinePiece2/NineLanCacheUI&type=date&legend=bottom-right&sealed_token=kRfme6MArfhWpiEnnS68XzB2s-e2QYrUvWv56Fsk5VnoV1lHfQiQI1QLkEixqbNx63q1bXKKEE0pOWkUscOTkzwNslyn8xunDap16E9HgmFMOsSwc863zgzqQBgJ4StZQ88YjyAO__6E12nK_HjRkWTXxNl5xyWuF1mcAwhe-kbMS3lPMp-BKyAxw4vQ" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=NinePiece2/NineLanCacheUI&type=date&legend=bottom-right&sealed_token=kRfme6MArfhWpiEnnS68XzB2s-e2QYrUvWv56Fsk5VnoV1lHfQiQI1QLkEixqbNx63q1bXKKEE0pOWkUscOTkzwNslyn8xunDap16E9HgmFMOsSwc863zgzqQBgJ4StZQ88YjyAO__6E12nK_HjRkWTXxNl5xyWuF1mcAwhe-kbMS3lPMp-BKyAxw4vQ" />
  </picture>
 </a>
