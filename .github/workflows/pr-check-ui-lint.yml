@@ -1,4 +1,4 @@
-name: PR Build & Test UI
+name: PR Lint Test UI
 
 on:
   pull_request:
