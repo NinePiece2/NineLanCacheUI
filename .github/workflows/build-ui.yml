@@ -56,7 +56,7 @@ jobs:
           id: current_time_step
           run: echo "time=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
             
-        - name: Build and push
+        - name: Build and push by digest
           id: build
           uses: docker/build-push-action@v7.3.0
           with:
