@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { formatBytes, chartPalette } from "@/lib/Utilities";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { getSignalRConnection, startConnection } from "@/lib/SignalR";
 import { AnimatedPage, AnimatedCard } from "@/components/animations";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
@@ -22,6 +22,22 @@ type PieTooltipItem = {
   name?: string | undefined;
   value?: number | undefined;
 };
+
+function CustomTooltip({ active, payload }: { active?: boolean; payload?: PieTooltipItem[] }) {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    const value = data.payload?.y ?? data.value ?? 0;
+    return (
+      <div className="bg-card p-2 rounded border border-border">
+        <p className="text-foreground font-['Poppins'] text-sm">
+          {`${data.payload?.x || data.name || "Unknown"}: ${formatBytes(value)}`}
+        </p>
+      </div>
+    );
+  }
+
+  return null;
+}
 interface ClientData {
   ipAddress: string;
   totalBytes: number;
@@ -93,39 +109,69 @@ export default function Stats() {
   }
   const debouncedDays = useDebounce(daysToUse, 400);
 
-  const fetchAll = useCallback(async () => {
-    try {
-      const base = `/api/proxy/Stats`;
-      const qs = `?days=${debouncedDays}&excludeIPs=${excludeIPs}`;
-
-      const [hitMissRes, clientHits, clientMisses] = await Promise.all([
-        fetch(`${base}/GetClientHitMissGrid${qs}`),
-        fetch(`${base}/GetClientHits${qs}`),
-        fetch(`${base}/GetClientMisses${qs}`),
-      ]);
-
-      const hitMissGrid = await hitMissRes.json();
-      setHitMissGridData(hitMissGrid);
-
-      const service = await clientHits.json();
-      setHitBytesByClient(service.map((s: ClientData) => ({ x: s.ipAddress, y: s.totalBytes })));
-
-      const miss = await clientMisses.json();
-      setMissBytesByClient(miss.map((s: ClientData) => ({ x: s.ipAddress, y: s.totalBytes })));
-    } catch (err) {
-      console.error("Failed to fetch data:", err);
-    }
-  }, [debouncedDays, excludeIPs]);
-
   useEffect(() => {
-    fetchAll();
-  }, [debouncedDays, excludeIPs, fetchAll]);
+    let cancelled = false;
+
+    const refreshStats = async () => {
+      try {
+        const base = `/api/proxy/Stats`;
+        const qs = `?days=${debouncedDays}&excludeIPs=${excludeIPs}`;
+
+        const [hitMissRes, clientHits, clientMisses] = await Promise.all([
+          fetch(`${base}/GetClientHitMissGrid${qs}`),
+          fetch(`${base}/GetClientHits${qs}`),
+          fetch(`${base}/GetClientMisses${qs}`),
+        ]);
+
+        if (cancelled) return;
+
+        const hitMissGrid = await hitMissRes.json();
+        const service = await clientHits.json();
+        const miss = await clientMisses.json();
+
+        setHitMissGridData(hitMissGrid);
+        setHitBytesByClient(service.map((s: ClientData) => ({ x: s.ipAddress, y: s.totalBytes })));
+        setMissBytesByClient(miss.map((s: ClientData) => ({ x: s.ipAddress, y: s.totalBytes })));
+      } catch (err) {
+        console.error("Failed to fetch data:", err);
+      }
+    };
+
+    void refreshStats();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedDays, excludeIPs]);
 
   useEffect(() => {
     const connection = getSignalRConnection();
 
     const handler = () => {
-      fetchAll();
+      void (async () => {
+        try {
+          const base = `/api/proxy/Stats`;
+          const qs = `?days=${debouncedDays}&excludeIPs=${excludeIPs}`;
+
+          const [hitMissRes, clientHits, clientMisses] = await Promise.all([
+            fetch(`${base}/GetClientHitMissGrid${qs}`),
+            fetch(`${base}/GetClientHits${qs}`),
+            fetch(`${base}/GetClientMisses${qs}`),
+          ]);
+
+          const hitMissGrid = await hitMissRes.json();
+          const service = await clientHits.json();
+          const miss = await clientMisses.json();
+
+          setHitMissGridData(hitMissGrid);
+          setHitBytesByClient(
+            service.map((s: ClientData) => ({ x: s.ipAddress, y: s.totalBytes })),
+          );
+          setMissBytesByClient(miss.map((s: ClientData) => ({ x: s.ipAddress, y: s.totalBytes })));
+        } catch (err) {
+          console.error("Failed to fetch data:", err);
+        }
+      })();
     };
 
     connection.on("UpdateDownloadEvents", handler);
@@ -134,22 +180,7 @@ export default function Stats() {
     return () => {
       connection.off("UpdateDownloadEvents", handler);
     };
-  }, [fetchAll]);
-
-  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: PieTooltipItem[] }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0];
-      const value = data.payload?.y ?? data.value ?? 0;
-      return (
-        <div className="bg-card p-2 rounded border border-border">
-          <p className="text-foreground font-['Poppins'] text-sm">
-            {`${data.payload?.x || data.name || "Unknown"}: ${formatBytes(value)}`}
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
+  }, [debouncedDays, excludeIPs]);
 
   const filteredData = hitMissGridData.filter(
     (item) => !filterText || item.ipAddress.toLowerCase().includes(filterText.toLowerCase()),
@@ -168,10 +199,10 @@ export default function Stats() {
   const startIdx = (currentPage - 1) * itemsPerPage;
   const paginatedData = sortedData.slice(startIdx, startIdx + itemsPerPage);
 
-  // Reset to page 1 when filter changes
-  useEffect(() => {
+  const handleFilterTextChange = (value: string) => {
+    setFilterText(value);
     setCurrentPage(1);
-  }, [filterText]);
+  };
 
   const handleSort = (field: keyof HitMissData) => {
     if (sortField === field) {
@@ -200,7 +231,7 @@ export default function Stats() {
                       <Input
                         placeholder="Filter by IP..."
                         value={filterText}
-                        onChange={(e) => setFilterText(e.target.value)}
+                        onChange={(e) => handleFilterTextChange(e.target.value)}
                         className="max-w-xs bg-secondary text-foreground border-border"
                       />
                     </div>

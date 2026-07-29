@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -18,6 +18,30 @@ import { getStoredFilters, setStoredFilters } from "@/lib/filterStorage";
 import { DownloadEvent } from "@/lib/recentDownloadsTypes";
 import { AnimatedPage, AnimatedCard } from "@/components/animations";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
+
+function mergeDownloadEvents(prevData: DownloadEvent[], newData: DownloadEvent[]) {
+  const dataMap = new Map<number, DownloadEvent>();
+  prevData.forEach((item) => dataMap.set(item.id, item));
+  newData.forEach((item) => dataMap.set(item.id, item));
+
+  return Array.from(dataMap.values())
+    .sort((a, b) => new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime())
+    .slice(0, 100);
+}
+
+async function fetchRecentSteamDownloads(days: number, excludeIPs: boolean, limit: string) {
+  const params = new URLSearchParams();
+  if (days > 0) params.append("days", days.toString());
+  params.append("excludeIPs", excludeIPs.toString());
+  params.append("limit", limit);
+
+  const res = await fetch(
+    `/api/proxy/RecentDownloads/GetRecentSteamDownloads?${params.toString()}`,
+  );
+  if (!res.ok) throw new Error("Failed to fetch data");
+
+  return (await res.json()) as DownloadEvent[];
+}
 
 export default function RecentSteamDownloads() {
   const [data, setData] = useState<DownloadEvent[]>([]);
@@ -70,72 +94,37 @@ export default function RecentSteamDownloads() {
     }
   };
 
-  const fetchData = useCallback(async () => {
-    try {
-      const params = new URLSearchParams();
-      if (days > 0) params.append("days", days.toString());
-      params.append("excludeIPs", excludeIPs.toString());
-      params.append("limit", "100");
-
-      const res = await fetch(
-        `/api/proxy/RecentDownloads/GetRecentSteamDownloads?${params.toString()}`,
-      );
-      if (!res.ok) throw new Error("Failed to fetch data");
-
-      const newData: DownloadEvent[] = await res.json();
-
-      setData((prevData) => {
-        const dataMap = new Map<number, DownloadEvent>();
-        prevData.forEach((item) => dataMap.set(item.id, item));
-        newData.forEach((item) => dataMap.set(item.id, item));
-
-        return Array.from(dataMap.values())
-          .sort((a, b) => new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime())
-          .slice(0, 100);
-      });
-    } catch (error) {
-      console.error(error);
-    }
-  }, [days, excludeIPs]);
-
-  const fetchAndMergeNewData = useCallback(async () => {
-    try {
-      const params = new URLSearchParams();
-      if (days > 0) params.append("days", days.toString());
-      params.append("excludeIPs", excludeIPs.toString());
-      params.append("limit", "20");
-
-      const res = await fetch(
-        `/api/proxy/RecentDownloads/GetRecentSteamDownloads?${params.toString()}`,
-      );
-      if (!res.ok) throw new Error("Failed to fetch new data");
-
-      const newData: DownloadEvent[] = await res.json();
-
-      setData((prevData) => {
-        const dataMap = new Map<number, DownloadEvent>();
-        prevData.forEach((item) => dataMap.set(item.id, item));
-        newData.forEach((item) => dataMap.set(item.id, item));
-
-        return Array.from(dataMap.values())
-          .sort((a, b) => new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime())
-          .slice(0, 100);
-      });
-    } catch (error) {
-      console.error("Failed to fetch and merge new data", error);
-    }
-  }, [days, excludeIPs]);
-
   useEffect(() => {
-    setData([]);
-    fetchData();
-  }, [fetchData]);
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const newData = await fetchRecentSteamDownloads(days, excludeIPs, "100");
+        if (!cancelled) {
+          setData((prevData) => mergeDownloadEvents(prevData, newData));
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [days, excludeIPs]);
 
   useEffect(() => {
     const connection = getSignalRConnection();
 
     const handler = () => {
-      fetchAndMergeNewData();
+      void (async () => {
+        try {
+          const newData = await fetchRecentSteamDownloads(days, excludeIPs, "20");
+          setData((prevData) => mergeDownloadEvents(prevData, newData));
+        } catch (error) {
+          console.error("Failed to fetch and merge new data", error);
+        }
+      })();
     };
 
     connection.on("UpdateDownloadEvents", handler);
@@ -144,7 +133,7 @@ export default function RecentSteamDownloads() {
     return () => {
       connection.off("UpdateDownloadEvents", handler);
     };
-  }, [fetchAndMergeNewData]);
+  }, [days, excludeIPs]);
 
   return (
     <AnimatedPage>
@@ -233,7 +222,7 @@ export default function RecentSteamDownloads() {
                             {row.cacheIdentifier === "steam" && appId ? (
                               <PreloadableImage key={appId} appId={appId} />
                             ) : (
-                              <div className="w-[184px] h-[69px] flex items-center justify-center">
+                              <div className="w-46 h-17.25 flex items-center justify-center">
                                 <span className="text-sm text-muted-foreground">unknown</span>
                               </div>
                             )}
@@ -254,7 +243,7 @@ export default function RecentSteamDownloads() {
                           </TableCell>
                           <TableCell className="text-foreground">{row.clientIp}</TableCell>
                           <TableCell>
-                            <div className="w-full min-w-[120px]">
+                            <div className="w-full min-w-30">
                               <div className="h-4 bg-muted rounded overflow-hidden">
                                 <div
                                   className="h-full bg-green-500"
@@ -267,7 +256,7 @@ export default function RecentSteamDownloads() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="w-full min-w-[120px]">
+                            <div className="w-full min-w-30">
                               <div className="h-4 bg-muted rounded overflow-hidden">
                                 <div
                                   className="h-full bg-red-500"
@@ -280,7 +269,7 @@ export default function RecentSteamDownloads() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="w-full min-w-[150px]">
+                            <div className="w-full min-w-37.5">
                               {totalBytes === 0 ? (
                                 <span className="text-red-400 text-sm">
                                   Could not find Steam Manifest
