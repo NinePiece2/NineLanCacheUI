@@ -44,3 +44,33 @@ updates:
       api-dependencies:
         patterns:
           - "*"
+
+  - package-ecosystem: "docker"
+    directory: "/NineLanCacheUI"
+    schedule:
+      interval: "daily"
+      time: "11:00"
+      timezone: "America/Toronto"
+    cooldown:
+      default-days: 3
+    commit-message:
+      prefix: "deps(docker)"
+    groups:
+      docker-images:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "docker"
+    directory: "/NineLanCacheUI-API"
+    schedule:
+      interval: "daily"
+      time: "11:00"
+      timezone: "America/Toronto"
+    cooldown:
+      default-days: 3
+    commit-message:
+      prefix: "deps(docker)"
+    groups:
+      docker-images:
+        patterns:
+          - "*"
