@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -18,6 +18,28 @@ import { getStoredFilters, setStoredFilters } from "@/lib/filterStorage";
 import { DownloadEvent } from "@/lib/recentDownloadsTypes";
 import { AnimatedPage, AnimatedCard } from "@/components/animations";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
+
+function mergeDownloadEvents(prevData: DownloadEvent[], newData: DownloadEvent[]) {
+  const dataMap = new Map<number, DownloadEvent>();
+  prevData.forEach((item) => dataMap.set(item.id, item));
+  newData.forEach((item) => dataMap.set(item.id, item));
+
+  return Array.from(dataMap.values())
+    .sort((a, b) => new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime())
+    .slice(0, 100);
+}
+
+async function fetchRecentDownloads(days: number, excludeIPs: boolean, limit: string) {
+  const params = new URLSearchParams();
+  if (days > 0) params.append("days", days.toString());
+  params.append("excludeIPs", excludeIPs.toString());
+  params.append("limit", limit);
+
+  const res = await fetch(`/api/proxy/RecentDownloads/GetRecentDownloads?${params.toString()}`);
+  if (!res.ok) throw new Error("Failed to fetch data");
+
+  return (await res.json()) as DownloadEvent[];
+}
 
 export default function RecentDownloads() {
   const [data, setData] = useState<DownloadEvent[]>([]);
@@ -69,73 +91,47 @@ export default function RecentDownloads() {
     }
   };
 
-  const fetchData = useCallback(async () => {
-    try {
-      const params = new URLSearchParams();
-      if (days > 0) params.append("days", days.toString());
-      params.append("excludeIPs", excludeIPs.toString());
-      params.append("limit", "100");
-
-      const res = await fetch(`/api/proxy/RecentDownloads/GetRecentDownloads?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to fetch data");
-
-      const newData: DownloadEvent[] = await res.json();
-
-      setData((prevData) => {
-        const dataMap = new Map<number, DownloadEvent>();
-        prevData.forEach((item) => dataMap.set(item.id, item));
-        newData.forEach((item) => dataMap.set(item.id, item));
-
-        return Array.from(dataMap.values())
-          .sort((a, b) => new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime())
-          .slice(0, 100);
-      });
-    } catch (error) {
-      console.error(error);
-    }
-  }, [days, excludeIPs]);
-
-  const fetchAndMergeNewData = useCallback(async () => {
-    try {
-      const params = new URLSearchParams();
-      if (days > 0) params.append("days", days.toString());
-      params.append("excludeIPs", excludeIPs.toString());
-      params.append("limit", "20");
-
-      const res = await fetch(`/api/proxy/RecentDownloads/GetRecentDownloads?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to fetch new data");
-
-      const newData: DownloadEvent[] = await res.json();
-
-      setData((prevData) => {
-        const dataMap = new Map<number, DownloadEvent>();
-        prevData.forEach((item) => dataMap.set(item.id, item));
-        newData.forEach((item) => dataMap.set(item.id, item));
-
-        return Array.from(dataMap.values())
-          .sort((a, b) => new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime())
-          .slice(0, 100);
-      });
-    } catch (error) {
-      console.error("Failed to fetch and merge new data", error);
-    }
-  }, [days, excludeIPs]);
-
   useEffect(() => {
-    setData([]);
-    fetchData();
-  }, [fetchData]);
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const newData = await fetchRecentDownloads(days, excludeIPs, "100");
+        if (!cancelled) {
+          setData((prevData) => mergeDownloadEvents(prevData, newData));
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [days, excludeIPs]);
 
   useEffect(() => {
     const connection = getSignalRConnection();
-    connection.on("UpdateDownloadEvents", fetchAndMergeNewData);
+
+    const handler = () => {
+      void (async () => {
+        try {
+          const newData = await fetchRecentDownloads(days, excludeIPs, "20");
+          setData((prevData) => mergeDownloadEvents(prevData, newData));
+        } catch (error) {
+          console.error("Failed to fetch and merge new data", error);
+        }
+      })();
+    };
+
+    connection.on("UpdateDownloadEvents", handler);
 
     startConnection();
 
     return () => {
-      connection.off("UpdateDownloadEvents", fetchAndMergeNewData);
+      connection.off("UpdateDownloadEvents", handler);
     };
-  }, [fetchAndMergeNewData]);
+  }, [days, excludeIPs]);
 
   return (
     <AnimatedPage>

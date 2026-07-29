@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from "recharts";
 import { formatBytes, chartPalette, formatBits } from "@/lib/Utilities";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { getSignalRConnection, startConnection } from "@/lib/SignalR";
 import { AnimatedPage, AnimatedCard } from "@/components/animations";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
@@ -23,6 +23,22 @@ type PieTooltipItem = {
   name?: string | undefined;
   value?: number | undefined;
 };
+
+function CustomTooltip({ active, payload }: { active?: boolean; payload?: PieTooltipItem[] }) {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    const value = data.payload?.y ?? data.value ?? 0;
+    return (
+      <div className="bg-card p-2 rounded border border-border">
+        <p className="text-foreground font-['Poppins'] text-sm">
+          {`${data.payload?.x || data.name || "Unknown"}: ${formatBytes(value)}`}
+        </p>
+      </div>
+    );
+  }
+
+  return null;
+}
 interface ServiceData {
   service: string;
   totalBytes: number;
@@ -139,46 +155,79 @@ export default function Home() {
   }
   const debouncedDays = useDebounce(daysToUse, 400);
 
-  const fetchAll = useCallback(async () => {
-    try {
-      const base = `/api/proxy/Data`;
-      const qs = `?days=${debouncedDays}&excludeIPs=${excludeIPs}`;
-
-      const [hitMissRes, serviceRes, missRes, hitRes] = await Promise.all([
-        fetch(`${base}/GetHitMiss${qs}`),
-        fetch(`${base}/GetBytesByService${qs}`),
-        fetch(`${base}/GetMissBytesByService${qs}`),
-        fetch(`${base}/GetHitBytesByService${qs}`),
-      ]);
-
-      const hitMiss = await hitMissRes.json();
-      setHitMissData([
-        { x: "Hit Bytes", y: hitMiss.totalHitBytes },
-        { x: "Miss Bytes", y: hitMiss.totalMissBytes },
-      ]);
-
-      const service = await serviceRes.json();
-      setServiceSplitData(service.map((s: ServiceData) => ({ x: s.service, y: s.totalBytes })));
-
-      const miss = await missRes.json();
-      setMissBytesByService(miss.map((s: ServiceData) => ({ x: s.service, y: s.totalBytes })));
-
-      const hit = await hitRes.json();
-      setHitBytesByService(hit.map((s: ServiceData) => ({ x: s.service, y: s.totalBytes })));
-    } catch (err) {
-      console.error("Failed to fetch data:", err);
-    }
-  }, [debouncedDays, excludeIPs]);
-
   useEffect(() => {
-    fetchAll();
-  }, [debouncedDays, excludeIPs, fetchAll]);
+    let cancelled = false;
+
+    const refreshData = async () => {
+      try {
+        const base = `/api/proxy/Data`;
+        const qs = `?days=${debouncedDays}&excludeIPs=${excludeIPs}`;
+
+        const [hitMissRes, serviceRes, missRes, hitRes] = await Promise.all([
+          fetch(`${base}/GetHitMiss${qs}`),
+          fetch(`${base}/GetBytesByService${qs}`),
+          fetch(`${base}/GetMissBytesByService${qs}`),
+          fetch(`${base}/GetHitBytesByService${qs}`),
+        ]);
+
+        if (cancelled) return;
+
+        const hitMiss = await hitMissRes.json();
+        const service = await serviceRes.json();
+        const miss = await missRes.json();
+        const hit = await hitRes.json();
+
+        setHitMissData([
+          { x: "Hit Bytes", y: hitMiss.totalHitBytes },
+          { x: "Miss Bytes", y: hitMiss.totalMissBytes },
+        ]);
+        setServiceSplitData(service.map((s: ServiceData) => ({ x: s.service, y: s.totalBytes })));
+        setMissBytesByService(miss.map((s: ServiceData) => ({ x: s.service, y: s.totalBytes })));
+        setHitBytesByService(hit.map((s: ServiceData) => ({ x: s.service, y: s.totalBytes })));
+      } catch (err) {
+        console.error("Failed to fetch data:", err);
+      }
+    };
+
+    void refreshData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedDays, excludeIPs]);
 
   useEffect(() => {
     const connection = getSignalRConnection();
 
     const handler = () => {
-      fetchAll();
+      void (async () => {
+        try {
+          const base = `/api/proxy/Data`;
+          const qs = `?days=${debouncedDays}&excludeIPs=${excludeIPs}`;
+
+          const [hitMissRes, serviceRes, missRes, hitRes] = await Promise.all([
+            fetch(`${base}/GetHitMiss${qs}`),
+            fetch(`${base}/GetBytesByService${qs}`),
+            fetch(`${base}/GetMissBytesByService${qs}`),
+            fetch(`${base}/GetHitBytesByService${qs}`),
+          ]);
+
+          const hitMiss = await hitMissRes.json();
+          const service = await serviceRes.json();
+          const miss = await missRes.json();
+          const hit = await hitRes.json();
+
+          setHitMissData([
+            { x: "Hit Bytes", y: hitMiss.totalHitBytes },
+            { x: "Miss Bytes", y: hitMiss.totalMissBytes },
+          ]);
+          setServiceSplitData(service.map((s: ServiceData) => ({ x: s.service, y: s.totalBytes })));
+          setMissBytesByService(miss.map((s: ServiceData) => ({ x: s.service, y: s.totalBytes })));
+          setHitBytesByService(hit.map((s: ServiceData) => ({ x: s.service, y: s.totalBytes })));
+        } catch (err) {
+          console.error("Failed to fetch data:", err);
+        }
+      })();
     };
 
     connection.on("UpdateDownloadEvents", handler);
@@ -187,24 +236,9 @@ export default function Home() {
     return () => {
       connection.off("UpdateDownloadEvents", handler);
     };
-  }, [fetchAll]);
+  }, [debouncedDays, excludeIPs]);
 
   const COLORS = ["#4CAF50", "#ff3131ff"];
-
-  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: PieTooltipItem[] }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0];
-      const value = data.payload?.y ?? data.value ?? 0;
-      return (
-        <div className="bg-card p-2 rounded border border-border">
-          <p className="text-foreground font-['Poppins'] text-sm">
-            {`${data.payload?.x || data.name || "Unknown"}: ${formatBytes(value)}`}
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   const renderLabel = (props: {
     cx?: number;
@@ -362,7 +396,7 @@ export default function Home() {
                 Cache Hit vs Miss (Bytes)
               </CardTitle>
             </CardHeader>
-            <CardContent className="h-[45vh] min-h-[220px] md:h-90">
+            <CardContent className="h-[45vh] min-h-55 md:h-90">
               {hitMissData[0].y > 0 && (
                 <ResponsiveContainer width="100%" height="100%" minHeight={220} minWidth={220}>
                   <PieChart>
@@ -395,7 +429,7 @@ export default function Home() {
                 Download Requests by Service
               </CardTitle>
             </CardHeader>
-            <CardContent className="h-[45vh] min-h-[220px] md:h-90">
+            <CardContent className="h-[45vh] min-h-55 md:h-90">
               {serviceSplitData.length > 0 && (
                 <ResponsiveContainer width="100%" height="100%" minHeight={220} minWidth={220}>
                   <PieChart>
@@ -431,7 +465,7 @@ export default function Home() {
                 Miss Bytes by Service
               </CardTitle>
             </CardHeader>
-            <CardContent className="h-[45vh] min-h-[220px] md:h-90">
+            <CardContent className="h-[45vh] min-h-55 md:h-90">
               {missBytesByService.length > 0 && (
                 <ResponsiveContainer width="100%" height="100%" minHeight={220} minWidth={220}>
                   <PieChart>
@@ -467,7 +501,7 @@ export default function Home() {
                 Hit Bytes by Service
               </CardTitle>
             </CardHeader>
-            <CardContent className="h-[45vh] min-h-[220px] md:h-90">
+            <CardContent className="h-[45vh] min-h-55 md:h-90">
               {hitBytesByService.length > 0 && (
                 <ResponsiveContainer width="100%" height="100%" minHeight={220} minWidth={220}>
                   <PieChart>
