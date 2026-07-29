@@ -67,6 +67,7 @@ No migration steps required. Simply pull the latest images and restart your cont
 
 ```bash
 docker compose pull
+docker compose down
 docker compose up -d
 ```
 
