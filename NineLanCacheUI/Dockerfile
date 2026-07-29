@@ -1,4 +1,4 @@
-FROM node:24-alpine AS build
+FROM node:26-alpine AS build
 
 ARG VERSION=dev
 ENV NEXT_PUBLIC_VERSION=${VERSION}
@@ -14,7 +14,7 @@ COPY . .
 RUN npm run build
 RUN npm prune --omit=dev 
 
-FROM node:24-alpine AS deploy
+FROM node:26-alpine AS deploy
 
 ARG VERSION=dev
 ARG BUILD_DATE
