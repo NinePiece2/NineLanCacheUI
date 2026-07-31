@@ -98,7 +98,7 @@ export default function RecentDownloads() {
       try {
         const newData = await fetchRecentDownloads(days, excludeIPs, "100");
         if (!cancelled) {
-          setData((prevData) => mergeDownloadEvents(prevData, newData));
+          setData(newData);
         }
       } catch (error) {
         console.error(error);
