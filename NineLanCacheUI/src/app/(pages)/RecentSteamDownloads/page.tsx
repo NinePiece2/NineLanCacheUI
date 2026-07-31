@@ -101,7 +101,7 @@ export default function RecentSteamDownloads() {
       try {
         const newData = await fetchRecentSteamDownloads(days, excludeIPs, "100");
         if (!cancelled) {
-          setData((prevData) => mergeDownloadEvents(prevData, newData));
+          setData(newData);
         }
       } catch (error) {
         console.error(error);
