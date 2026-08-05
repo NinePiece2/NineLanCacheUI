@@ -237,10 +237,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Star History
 
-<a href="https://www.star-history.com/?type=date&legend=bottom-right&repos=NinePiece2%2FNineLanCacheUI">
+<a href="https://www.star-history.com/?repos=NinePiece2%2FNineLanCacheUI&type=date&legend=bottom-right">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=NinePiece2/NineLanCacheUI&type=date&theme=dark&legend=bottom-right&sealed_token=kRfme6MArfhWpiEnnS68XzB2s-e2QYrUvWv56Fsk5VnoV1lHfQiQI1QLkEixqbNx63q1bXKKEE0pOWkUscOTkzwNslyn8xunDap16E9HgmFMOsSwc863zgzqQBgJ4StZQ88YjyAO__6E12nK_HjRkWTXxNl5xyWuF1mcAwhe-kbMS3lPMp-BKyAxw4vQ" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=NinePiece2/NineLanCacheUI&type=date&legend=bottom-right&sealed_token=kRfme6MArfhWpiEnnS68XzB2s-e2QYrUvWv56Fsk5VnoV1lHfQiQI1QLkEixqbNx63q1bXKKEE0pOWkUscOTkzwNslyn8xunDap16E9HgmFMOsSwc863zgzqQBgJ4StZQ88YjyAO__6E12nK_HjRkWTXxNl5xyWuF1mcAwhe-kbMS3lPMp-BKyAxw4vQ" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=NinePiece2/NineLanCacheUI&type=date&legend=bottom-right&sealed_token=kRfme6MArfhWpiEnnS68XzB2s-e2QYrUvWv56Fsk5VnoV1lHfQiQI1QLkEixqbNx63q1bXKKEE0pOWkUscOTkzwNslyn8xunDap16E9HgmFMOsSwc863zgzqQBgJ4StZQ88YjyAO__6E12nK_HjRkWTXxNl5xyWuF1mcAwhe-kbMS3lPMp-BKyAxw4vQ" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=NinePiece2/NineLanCacheUI&type=date&theme=dark&legend=bottom-right&sealed_token=whWAmHt1jNDTsc8iYtn9WpV3xnfE2qX5PHb2dz67BkaiEaN23om6apO-4TWX3xbl22sXtxFKD9w3sLUobGSEB7iiB2VLiYM0e4BaMem-h85xkhXgVGnrrP-ZFdBnQPWIF0lKp0mRWsNcxPxywdYPKnwDARVt0q7dMCFAjypH42tfhooG1DuX_6DqJNEn" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=NinePiece2/NineLanCacheUI&type=date&legend=bottom-right&sealed_token=whWAmHt1jNDTsc8iYtn9WpV3xnfE2qX5PHb2dz67BkaiEaN23om6apO-4TWX3xbl22sXtxFKD9w3sLUobGSEB7iiB2VLiYM0e4BaMem-h85xkhXgVGnrrP-ZFdBnQPWIF0lKp0mRWsNcxPxywdYPKnwDARVt0q7dMCFAjypH42tfhooG1DuX_6DqJNEn" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=NinePiece2/NineLanCacheUI&type=date&legend=bottom-right&sealed_token=whWAmHt1jNDTsc8iYtn9WpV3xnfE2qX5PHb2dz67BkaiEaN23om6apO-4TWX3xbl22sXtxFKD9w3sLUobGSEB7iiB2VLiYM0e4BaMem-h85xkhXgVGnrrP-ZFdBnQPWIF0lKp0mRWsNcxPxywdYPKnwDARVt0q7dMCFAjypH42tfhooG1DuX_6DqJNEn" />
  </picture>
 </a>
