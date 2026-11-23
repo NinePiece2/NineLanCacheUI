@@ -76,6 +76,13 @@ namespace NineLanCacheUI_API.Controllers
             return Ok(new { InterfaceName = inter });
         }
 
+        [HttpGet]
+        public IActionResult GetVersion()
+        {
+            var version = Environment.GetEnvironmentVariable("VERSION") ?? "dev";
+            return Ok(new { version });
+        }
+
         [HttpPost]
         public async Task<IActionResult> SetNetworkGraphInterface([FromBody] NetworkGraphInterface ito)
         {
