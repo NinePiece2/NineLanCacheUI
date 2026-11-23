@@ -435,7 +435,8 @@ export default function SettingsPage() {
                       </span>
                     </TooltipTrigger>
                     <TooltipContent side="left">
-                      To edit this setting, update <code>ClientNameLookupEnabled</code> in the API environment variables and restart the API.
+                      To edit this setting, update <code>ClientNameLookupEnabled</code> in the API
+                      environment variables and restart the API.
                     </TooltipContent>
                   </Tooltip>
                 </div>
