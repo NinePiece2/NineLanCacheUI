@@ -16,13 +16,15 @@ import {
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { useState } from "react";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
   const [mobileOpen, setMobileOpen] = useState(false);
   return (
-    <ThemeProvider defaultTheme="system" storageKey="ninelancache-theme">
+    <TooltipProvider>
+      <ThemeProvider defaultTheme="system" storageKey="ninelancache-theme">
       <div className="flex flex-col min-h-screen">
         <header className="border-b border-border bg-background sticky top-0 z-50">
           <div
@@ -184,6 +186,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         </header>
         <main className="flex-1">{children}</main>
       </div>
-    </ThemeProvider>
+      </ThemeProvider>
+    </TooltipProvider>
   );
 }

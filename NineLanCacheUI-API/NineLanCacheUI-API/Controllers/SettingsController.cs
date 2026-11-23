@@ -7,6 +7,7 @@ using NineLanCacheUI_API.Models;
 using System.Linq;
 using NineLanCacheUI_API.Helpers;
 using NineLanCacheUI_API.Data.Tables;
+using System.Net;
 
 namespace NineLanCacheUI_API.Controllers
 {
@@ -16,10 +17,15 @@ namespace NineLanCacheUI_API.Controllers
     {
         private readonly ILogger<SettingsController> _logger;
         private readonly NineLanCacheUIDBContext _context;
-        public SettingsController(ILogger<SettingsController> logger, NineLanCacheUIDBContext context)
+        private readonly IConfiguration _configuration;
+        public SettingsController(
+            ILogger<SettingsController> logger,
+            NineLanCacheUIDBContext context,
+            IConfiguration configuration)
         {
             _logger = logger;
             _context = context;
+            _configuration = configuration;
         }
 
         [HttpGet]
@@ -83,6 +89,65 @@ namespace NineLanCacheUI_API.Controllers
             return Ok(new { version });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetClientNames()
+        {
+            var activeIps = _context.DownloadEvents
+                .Where(e => e.CacheHitBytes != 0 || e.CacheMissBytes != 0)
+                .Select(e => e.ClientIp)
+                .Distinct();
+
+            var clients = await _context.ClientNames
+                .Where(c => activeIps.Contains(c.IpAddress))
+                .OrderBy(c => c.IpAddress)
+                .Select(c => new
+                {
+                    c.IpAddress,
+                    c.Name,
+                    c.IsManuallySet
+                })
+                .ToListAsync();
+            return Ok(clients);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SetClientName([FromBody] ClientNameRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.IpAddress)
+                || !IPAddress.TryParse(request.IpAddress.Trim(), out var ipAddress))
+            {
+                return BadRequest("A valid IP address is required.");
+            }
+
+            var normalizedIp = ipAddress.ToString();
+            var client = await _context.ClientNames.FindAsync(normalizedIp);
+            if (client == null)
+            {
+                return NotFound(new { message = "IP address is not in the client names table." });
+            }
+
+            var name = request.Name?.Trim();
+            client.Name = string.IsNullOrWhiteSpace(name) ? null : name;
+            client.IsManuallySet = !string.IsNullOrWhiteSpace(name);
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                client.IpAddress,
+                client.Name,
+                client.IsManuallySet
+            });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetClientNameLookupSetting()
+        {
+            var enabled = bool.TryParse(
+                _configuration["ClientNameLookupEnabled"],
+                out var value) && value;
+            return Ok(new { enabled });
+        }
+
         [HttpPost]
         public async Task<IActionResult> SetNetworkGraphInterface([FromBody] NetworkGraphInterface ito)
         {
@@ -116,5 +181,12 @@ namespace NineLanCacheUI_API.Controllers
         {
             public string Interface { get; set; } = "";
         }
+
+        public class ClientNameRequest
+        {
+            public string IpAddress { get; set; } = "";
+            public string? Name { get; set; }
+        }
+
     }
 }

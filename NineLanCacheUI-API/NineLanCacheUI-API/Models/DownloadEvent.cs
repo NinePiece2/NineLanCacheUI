@@ -11,6 +11,7 @@ namespace NineLanCacheUI_API.Models
         public string? DownloadIdentifierString { get; set; }
 
         public required string ClientIp { get; set; }
+        public string? ClientName { get; set; }
 
         public required DateTime CreatedAt { get; set; }
         public required DateTime LastUpdatedAt { get; set; }

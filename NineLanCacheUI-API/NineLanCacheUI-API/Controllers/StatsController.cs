@@ -54,8 +54,14 @@ namespace NineLanCacheUI_API.Controllers
                     TotalMisses = g.Sum(x => x.CacheMissBytes)
                 })
                 .ToListAsync();
-
-            return Ok(results);
+            var names = await GetClientNamesAsync(results.Select(r => r.IPAddress));
+            return Ok(results.Select(r => new
+            {
+                r.IPAddress,
+                Name = names.TryGetValue(r.IPAddress, out var name) ? name : null,
+                r.TotalHits,
+                r.TotalMisses
+            }));
             
         }
 
@@ -91,8 +97,13 @@ namespace NineLanCacheUI_API.Controllers
                     TotalBytes = g.Sum(x => x.CacheHitBytes)
                 })
                 .ToListAsync();
-
-            return Ok(results);
+            var names = await GetClientNamesAsync(results.Select(r => r.IPAddress));
+            return Ok(results.Select(r => new
+            {
+                r.IPAddress,
+                Name = names.TryGetValue(r.IPAddress, out var name) ? name : null,
+                r.TotalBytes
+            }));
         }
 
         [HttpGet]
@@ -127,12 +138,21 @@ namespace NineLanCacheUI_API.Controllers
                     TotalBytes = g.Sum(x => x.CacheMissBytes)
                 })
                 .ToListAsync();
-
-            return Ok(results);
+            var names = await GetClientNamesAsync(results.Select(r => r.IPAddress));
+            return Ok(results.Select(r => new
+            {
+                r.IPAddress,
+                Name = names.TryGetValue(r.IPAddress, out var name) ? name : null,
+                r.TotalBytes
+            }));
         }
 
-        
-
-
+        private async Task<Dictionary<string, string?>> GetClientNamesAsync(IEnumerable<string> ipAddresses)
+        {
+            var ips = ipAddresses.Distinct().ToList();
+            return await _context.ClientNames
+                .Where(client => ips.Contains(client.IpAddress))
+                .ToDictionaryAsync(client => client.IpAddress, client => client.Name);
+        }
     }
 }

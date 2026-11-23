@@ -15,7 +15,23 @@ namespace NineLanCacheUI_API.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.7");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.23");
+
+            modelBuilder.Entity("NineLanCacheUI_API.Data.Tables.DbClientName", b =>
+                {
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsManuallySet")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("IpAddress");
+
+                    b.ToTable("ClientNames");
+                });
 
             modelBuilder.Entity("NineLanCacheUI_API.Data.Tables.DbDownloadEvent", b =>
                 {
