@@ -10,6 +10,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 function isValidIp(ip: string) {
   return /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/.test(ip);
@@ -37,6 +38,8 @@ export default function SettingsPage() {
   const [selectedInterface, setSelectedInterface] = useState("");
   const [interfaceOptions, setInterfaceOptions] = useState<string[]>([]);
   const [interfaceLoading, setInterfaceLoading] = useState(true);
+  const [uiVersion, setUiVersion] = useState("Loading...");
+  const [apiVersion, setApiVersion] = useState("Loading...");
 
   useEffect(() => {
     async function fetchIps() {
@@ -127,6 +130,30 @@ export default function SettingsPage() {
     }
 
     fetchInterfacesAndSetting();
+  }, []);
+
+  useEffect(() => {
+    async function fetchVersions() {
+      try {
+        const uiRes = await fetch("/api/version");
+        if (!uiRes.ok) throw new Error("Failed to load UI version");
+        const uiData = await uiRes.json();
+        setUiVersion(uiData.version || "dev");
+      } catch {
+        setUiVersion("Unavailable");
+      }
+
+      try {
+        const apiRes = await fetch("/api/proxy/Settings/GetVersion");
+        if (!apiRes.ok) throw new Error("Failed to load API version");
+        const apiData = await apiRes.json();
+        setApiVersion(apiData.version || "dev");
+      } catch {
+        setApiVersion("Unavailable");
+      }
+    }
+
+    fetchVersions();
   }, []);
 
   return (
@@ -270,6 +297,25 @@ export default function SettingsPage() {
                 </div>
               )}
             </section>
+          </AnimatedCard>
+
+          <AnimatedCard delay={0.4}>
+            <Card className="border-border bg-card py-0">
+              <CardHeader className="pb-2 pt-4">
+                <CardTitle className="text-lg text-foreground">Application Versions</CardTitle>
+                <CardDescription>Versions reported by each application</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3 pb-4 sm:grid-cols-2">
+                <div className="rounded-md border border-border bg-background px-4 py-3">
+                  <p className="text-sm text-muted-foreground">UI Server</p>
+                  <p className="mt-1 font-mono font-semibold text-foreground">{uiVersion}</p>
+                </div>
+                <div className="rounded-md border border-border bg-background px-4 py-3">
+                  <p className="text-sm text-muted-foreground">API Server</p>
+                  <p className="mt-1 font-mono font-semibold text-foreground">{apiVersion}</p>
+                </div>
+              </CardContent>
+            </Card>
           </AnimatedCard>
         </div>
       </div>
