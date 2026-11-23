@@ -246,7 +246,9 @@ export default function RecentSteamDownloads() {
                             {row.clientName ? (
                               <span className="flex flex-col">
                                 <span>{row.clientName}</span>
-                                <span className="text-xs text-muted-foreground">({row.clientIp})</span>
+                                <span className="text-xs text-muted-foreground">
+                                  ({row.clientIp})
+                                </span>
                               </span>
                             ) : (
                               row.clientIp
