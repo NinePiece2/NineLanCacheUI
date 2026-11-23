@@ -65,6 +65,7 @@ export default function RecentDownloads() {
     return (
       item.cacheIdentifier.toLowerCase().includes(searchLower) ||
       item.clientIp.toLowerCase().includes(searchLower) ||
+      (item.clientName || "").toLowerCase().includes(searchLower) ||
       (item.steamDepot?.steamApp?.name || "").toLowerCase().includes(searchLower) ||
       (item.downloadIdentifier?.toString() || "").includes(searchLower)
     );
@@ -238,7 +239,16 @@ export default function RecentDownloads() {
                               <span className="text-sm text-muted-foreground">N/A</span>
                             )}
                           </TableCell>
-                          <TableCell className="text-foreground">{row.clientIp}</TableCell>
+                          <TableCell className="text-foreground">
+                            {row.clientName ? (
+                              <span className="flex flex-col">
+                                <span>{row.clientName}</span>
+                                <span className="text-xs text-muted-foreground">({row.clientIp})</span>
+                              </span>
+                            ) : (
+                              row.clientIp
+                            )}
+                          </TableCell>
                           <TableCell>
                             <div className="w-full min-w-[120px]">
                               <div className="h-4 bg-muted rounded overflow-hidden">

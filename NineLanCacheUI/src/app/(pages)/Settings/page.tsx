@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AnimatedPage, AnimatedCard } from "@/components/animations";
 import {
@@ -11,6 +11,24 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 function isValidIp(ip: string) {
   return /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/.test(ip);
@@ -28,6 +46,12 @@ function normalizeIp(ip: string) {
   return nums.join(".");
 }
 
+type ClientName = {
+  ipAddress: string;
+  name: string | null;
+  isManuallySet: boolean;
+};
+
 export default function SettingsPage() {
   const [excludedIps, setExcludedIps] = useState<string[]>([]);
   const [newIp, setNewIp] = useState("");
@@ -40,6 +64,10 @@ export default function SettingsPage() {
   const [interfaceLoading, setInterfaceLoading] = useState(true);
   const [uiVersion, setUiVersion] = useState("Loading...");
   const [apiVersion, setApiVersion] = useState("Loading...");
+  const [clientNames, setClientNames] = useState<ClientName[]>([]);
+  const [clientNameLookupEnabled, setClientNameLookupEnabled] = useState(false);
+  const [clientNamesLoading, setClientNamesLoading] = useState(true);
+  const [clientNameSearch, setClientNameSearch] = useState("");
 
   useEffect(() => {
     async function fetchIps() {
@@ -155,6 +183,87 @@ export default function SettingsPage() {
 
     fetchVersions();
   }, []);
+
+  const fetchClientNames = async () => {
+    try {
+      const [namesRes, settingRes] = await Promise.all([
+        fetch("/api/proxy/Settings/GetClientNames"),
+        fetch("/api/proxy/Settings/GetClientNameLookupSetting"),
+      ]);
+
+      if (!namesRes.ok) throw new Error("Failed to load client names");
+      if (!settingRes.ok) throw new Error("Failed to load hostname lookup setting");
+
+      const names = await namesRes.json();
+      const setting = await settingRes.json();
+      setClientNames(names || []);
+      setClientNameLookupEnabled(Boolean(setting.enabled));
+    } catch (err) {
+      console.error("Error loading client names:", err);
+      setError("Failed to load client names.");
+    } finally {
+      setClientNamesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    async function initializeClientNames() {
+      try {
+        const [namesRes, settingRes] = await Promise.all([
+          fetch("/api/proxy/Settings/GetClientNames"),
+          fetch("/api/proxy/Settings/GetClientNameLookupSetting"),
+        ]);
+
+        if (!namesRes.ok) throw new Error("Failed to load client names");
+        if (!settingRes.ok) throw new Error("Failed to load hostname lookup setting");
+
+        const names = await namesRes.json();
+        const setting = await settingRes.json();
+        setClientNames(names || []);
+        setClientNameLookupEnabled(Boolean(setting.enabled));
+      } catch (err) {
+        console.error("Error loading client names:", err);
+        setError("Failed to load client names.");
+      } finally {
+        setClientNamesLoading(false);
+      }
+    }
+
+    void initializeClientNames();
+  }, []);
+
+  const saveClientName = async (ipAddress: string, name: string) => {
+    try {
+      const res = await fetch("/api/proxy/Settings/SetClientName", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ipAddress, name }),
+      });
+      if (!res.ok) {
+        const result = await res.json();
+        throw new Error(result.message || "Failed to save client name");
+      }
+      await fetchClientNames();
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save client name.");
+      return false;
+    }
+  };
+
+  const filteredClientNames = useMemo(() => {
+    const query = clientNameSearch.trim().toLowerCase();
+    if (!query) return clientNames;
+
+    return clientNames.filter((client) => {
+      const source = client.isManuallySet ? "manual" : "automatic";
+      return (
+        client.ipAddress.toLowerCase().includes(query) ||
+        (client.name?.toLowerCase().includes(query) ?? false) ||
+        source.includes(query)
+      );
+    });
+  }, [clientNames, clientNameSearch]);
 
   return (
     <AnimatedPage>
@@ -300,6 +409,121 @@ export default function SettingsPage() {
           </AnimatedCard>
 
           <AnimatedCard delay={0.4}>
+            <Card className="border-border bg-card py-0">
+              <CardHeader className="pb-2 pt-4">
+                <CardTitle className="text-lg text-foreground">Client Names</CardTitle>
+                <CardDescription>
+                  Map client IP addresses to friendly or automatically discovered names
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pb-4">
+                <div className="flex items-center justify-between gap-4 rounded-md border border-border px-4 py-3">
+                  <div>
+                    <p className="font-medium text-foreground">Hostname lookup</p>
+                    <p className="text-sm text-muted-foreground">
+                      Look up hostnames for network client IP addresses
+                    </p>
+                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span tabIndex={0} className="inline-flex rounded-full">
+                        <Switch
+                          checked={clientNameLookupEnabled}
+                          disabled
+                          aria-label="Hostname lookup enabled from server configuration"
+                        />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">
+                      To edit this setting, update <code>ClientNameLookupEnabled</code> in the API environment variables and restart the API.
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button className="mt-4 w-full">Manage client names</Button>
+                  </DialogTrigger>
+                  <DialogContent className="flex h-[85vh] w-[calc(100%-2rem)] flex-col overflow-hidden sm:w-[900px] sm:max-w-[900px]">
+                    <DialogHeader>
+                      <DialogTitle>Client names</DialogTitle>
+                      <DialogDescription>
+                        Enter a custom name for an IP address. Manual names are not overwritten by
+                        hostname lookup.
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="shrink-0">
+                      <Input
+                        value={clientNameSearch}
+                        onChange={(event) => setClientNameSearch(event.target.value)}
+                        placeholder="Search by IP address, name, or source"
+                        aria-label="Search client names"
+                      />
+                    </div>
+
+                    {clientNamesLoading ? (
+                      <p className="text-sm text-muted-foreground">Loading client names...</p>
+                    ) : (
+                      <div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border">
+                        <Table>
+                          <TableHeader className="sticky top-0 z-10 bg-background">
+                            <TableRow>
+                              <TableHead>IP Address</TableHead>
+                              <TableHead>Name</TableHead>
+                              <TableHead>Source</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredClientNames.map((client) => (
+                              <TableRow key={client.ipAddress}>
+                                <TableCell className="font-mono">{client.ipAddress}</TableCell>
+                                <TableCell>
+                                  <Input
+                                    key={`${client.ipAddress}-${client.name ?? ""}`}
+                                    defaultValue={client.name ?? ""}
+                                    placeholder="Custom name"
+                                    onBlur={(event) => {
+                                      const nextName = event.target.value.trim();
+                                      const currentName = client.name?.trim() ?? "";
+                                      if (nextName !== currentName) {
+                                        void saveClientName(client.ipAddress, nextName);
+                                      }
+                                    }}
+                                    aria-label={`Name for ${client.ipAddress}`}
+                                  />
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">
+                                  {client.isManuallySet ? "Manual" : "Automatic"}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                            {filteredClientNames.length === 0 && (
+                              <TableRow>
+                                <TableCell
+                                  colSpan={3}
+                                  className="text-center text-muted-foreground"
+                                >
+                                  {clientNames.length === 0
+                                    ? "No client IP addresses found yet."
+                                    : "No clients match your search."}
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                        <p className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
+                          Showing {filteredClientNames.length} of {clientNames.length} clients
+                        </p>
+                      </div>
+                    )}
+                  </DialogContent>
+                </Dialog>
+              </CardContent>
+            </Card>
+          </AnimatedCard>
+
+          <AnimatedCard delay={0.5} className="mt-4">
             <Card className="border-border bg-card py-0">
               <CardHeader className="pb-2 pt-4">
                 <CardTitle className="text-lg text-foreground">Application Versions</CardTitle>

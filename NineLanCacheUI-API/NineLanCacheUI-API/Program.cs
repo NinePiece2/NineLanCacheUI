@@ -84,6 +84,7 @@ namespace NineLanCacheUI_API
             builder.Services.AddSingleton<SteamManifestService>();
             builder.Services.AddHostedService<FrontendRefresherService>();
             builder.Services.AddHostedService<NetworkPollingService>();
+            builder.Services.AddHostedService<ClientNameLookupHostedService>();
 
 
             if (Convert.ToBoolean(builder.Configuration["DirectSteamIntegration"]))

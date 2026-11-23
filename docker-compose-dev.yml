@@ -15,6 +15,7 @@ services:
       - LANG=en_CA.UTF-8
       - DirectSteamIntegration=false
       - SkipLinesBasedOnBytesRead=false
+      - ClientNameLookupEnabled=false
       - ASPNETCORE_HTTP_PORTS=7401
       - ASPNETCORE_URLS=http://host.docker.internal:7401
     volumes:

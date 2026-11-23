@@ -16,6 +16,7 @@ namespace NineLanCacheUI_API.Data
         public DbSet<DbSteamManifest> SteamManifests => Set<DbSteamManifest>();
         public DbSet<DbExcludedIp> ExcludedIps => Set<DbExcludedIp>();
         public DbSet<DbNetworkInterfaceStat> Stats => Set<DbNetworkInterfaceStat>();
+        public DbSet<DbClientName> ClientNames => Set<DbClientName>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -81,6 +81,7 @@ namespace NineLanCacheUI_API.Controllers
                          };
 
             var rawResults = await joined.ToListAsync();
+            var clientNames = await GetClientNamesAsync(rawResults.Select(x => x.e.ClientIp).Distinct());
 
             var grouped = rawResults.GroupBy(x => x.e);
 
@@ -97,6 +98,9 @@ namespace NineLanCacheUI_API.Controllers
                     DownloadIdentifier = group.Key.DownloadIdentifier,
                     DownloadIdentifierString = group.Key.DownloadIdentifierString,
                     ClientIp = group.Key.ClientIp,
+                    ClientName = clientNames.TryGetValue(group.Key.ClientIp, out var clientName)
+                        ? clientName
+                        : null,
                     CreatedAt = group.Key.CreatedAt,
                     LastUpdatedAt = group.Key.LastUpdatedAt,
                     CacheHitBytes = group.Key.CacheHitBytes,
@@ -174,6 +178,7 @@ namespace NineLanCacheUI_API.Controllers
                          };
 
             var rawResults = await joined.ToListAsync();
+            var clientNames = await GetClientNamesAsync(rawResults.Select(x => x.e.ClientIp).Distinct());
 
             var grouped = rawResults.GroupBy(x => x.e);
 
@@ -190,6 +195,9 @@ namespace NineLanCacheUI_API.Controllers
                     DownloadIdentifier = group.Key.DownloadIdentifier,
                     DownloadIdentifierString = group.Key.DownloadIdentifierString,
                     ClientIp = group.Key.ClientIp,
+                    ClientName = clientNames.TryGetValue(group.Key.ClientIp, out var clientName)
+                        ? clientName
+                        : null,
                     CreatedAt = group.Key.CreatedAt,
                     LastUpdatedAt = group.Key.LastUpdatedAt,
                     CacheHitBytes = group.Key.CacheHitBytes,
@@ -211,6 +219,17 @@ namespace NineLanCacheUI_API.Controllers
             return Ok(result);
         }
 
+        private async Task<Dictionary<string, string?>> GetClientNamesAsync(IEnumerable<string> ipAddresses)
+        {
+            var ips = ipAddresses.Where(ip => !string.IsNullOrWhiteSpace(ip)).Distinct().ToList();
+            if (ips.Count == 0)
+            {
+                return new Dictionary<string, string?>();
+            }
 
+            return await _context.ClientNames
+                .Where(client => ips.Contains(client.IpAddress))
+                .ToDictionaryAsync(client => client.IpAddress, client => client.Name);
+        }
     }
 }

@@ -40,11 +40,13 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: PieToo
 }
 interface ClientData {
   ipAddress: string;
+  name?: string | null;
   totalBytes: number;
 }
 
 interface HitMissData {
   ipAddress: string;
+  name?: string | null;
   totalHits: number;
   totalMisses: number;
 }
@@ -130,8 +132,18 @@ export default function Stats() {
         const miss = await clientMisses.json();
 
         setHitMissGridData(hitMissGrid);
-        setHitBytesByClient(service.map((s: ClientData) => ({ x: s.ipAddress, y: s.totalBytes })));
-        setMissBytesByClient(miss.map((s: ClientData) => ({ x: s.ipAddress, y: s.totalBytes })));
+        setHitBytesByClient(
+          service.map((s: ClientData) => ({
+            x: s.name ? `${s.name}\n(${s.ipAddress})` : s.ipAddress,
+            y: s.totalBytes,
+          })),
+        );
+        setMissBytesByClient(
+          miss.map((s: ClientData) => ({
+            x: s.name ? `${s.name}\n(${s.ipAddress})` : s.ipAddress,
+            y: s.totalBytes,
+          })),
+        );
       } catch (err) {
         console.error("Failed to fetch data:", err);
       }
@@ -165,9 +177,17 @@ export default function Stats() {
 
           setHitMissGridData(hitMissGrid);
           setHitBytesByClient(
-            service.map((s: ClientData) => ({ x: s.ipAddress, y: s.totalBytes })),
+            service.map((s: ClientData) => ({
+              x: s.name ? `${s.name}\n(${s.ipAddress})` : s.ipAddress,
+              y: s.totalBytes,
+            })),
           );
-          setMissBytesByClient(miss.map((s: ClientData) => ({ x: s.ipAddress, y: s.totalBytes })));
+          setMissBytesByClient(
+            miss.map((s: ClientData) => ({
+              x: s.name ? `${s.name}\n(${s.ipAddress})` : s.ipAddress,
+              y: s.totalBytes,
+            })),
+          );
         } catch (err) {
           console.error("Failed to fetch data:", err);
         }
@@ -183,13 +203,16 @@ export default function Stats() {
   }, [debouncedDays, excludeIPs]);
 
   const filteredData = hitMissGridData.filter(
-    (item) => !filterText || item.ipAddress.toLowerCase().includes(filterText.toLowerCase()),
+    (item) =>
+      !filterText ||
+      item.ipAddress.toLowerCase().includes(filterText.toLowerCase()) ||
+      (item.name || "").toLowerCase().includes(filterText.toLowerCase()),
   );
 
   const sortedData = [...filteredData].sort((a, b) => {
     if (!sortField) return 0;
-    const aVal = a[sortField];
-    const bVal = b[sortField];
+    const aVal = String(a[sortField] ?? "");
+    const bVal = String(b[sortField] ?? "");
     const modifier = sortDirection === "asc" ? 1 : -1;
     return aVal > bVal ? modifier : aVal < bVal ? -modifier : 0;
   });
@@ -267,7 +290,18 @@ export default function Stats() {
                         <TableBody>
                           {paginatedData.map((row, idx) => (
                             <TableRow key={idx} className="border-border hover:bg-secondary">
-                              <TableCell className="text-foreground">{row.ipAddress}</TableCell>
+                              <TableCell className="text-foreground">
+                                {row.name ? (
+                                  <span className="flex flex-col">
+                                    <span>{row.name}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      ({row.ipAddress})
+                                    </span>
+                                  </span>
+                                ) : (
+                                  row.ipAddress
+                                )}
+                              </TableCell>
                               <TableCell className="text-foreground">
                                 {formatBytes(row.totalHits)}
                               </TableCell>

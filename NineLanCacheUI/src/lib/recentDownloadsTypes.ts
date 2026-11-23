@@ -12,6 +12,7 @@ export interface DownloadEvent {
   downloadIdentifier?: number;
   downloadIdentifierString?: string;
   clientIp: string;
+  clientName?: string | null;
   createdAt: string;
   lastUpdatedAt: string;
   cacheHitBytes: number;
