@@ -152,6 +152,7 @@ services:
       - LANG=en_CA.UTF-8
       - DirectSteamIntegration=false
       - SkipLinesBasedOnBytesRead=false
+      - ClientNameLookupEnabled=false
       - ASPNETCORE_HTTP_PORTS=7401
     volumes:
       - "/home/romit/NineLanCacheUI/backendData:/var/ninelancacheuidata"
@@ -187,6 +188,7 @@ services:
 | LANG | Set this to your language | ?? |
 | DirectSteamIntegration | When false, the backend will download a .CSV file with all depot => steam game mappings (from: https://github.com/devedse/DeveLanCacheUI_SteamDepotFinder_Runner/releases). When true, the tool wil generate this itself / keep it up to date. I would suggest turning this on. | false (for now) |
 | SkipLinesBasedOnBytesRead | When false, it will re-read through the whole file on startup. When true, it tries to be smart and start reading from where it last left off. I would suggest turning this on. | false (for now) |
+| ClientNameLookupEnabled | When true it will lookup all client IP adresses and try to find hostnames for the clients to show on the UI. | false (for now) | 
 
 **Volume Mounts API**
 
